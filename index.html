@@ -1407,6 +1407,77 @@
       body.auction-view .board-legend, body.auction-view .board-subtitle, body.auction-view .panel-heading { display: none; }
       body.auction-view .brand small { display: none; }
     }
+    /* Mobile: auction, results review and settled screens each fit in one viewport (no scrolling) */
+    @media (max-width: 720px) {
+      body.auction-view, body.settled-view { overflow: hidden; }
+      body.auction-view #app, body.settled-view #app { height: 100vh; height: 100dvh; min-height: 0; padding: 6px 8px; gap: 6px; }
+      body.auction-view .topbar, body.settled-view .topbar { padding: 5px 10px; flex-wrap: nowrap; }
+      body.auction-view .brand, body.settled-view .brand { font-size: 0.8rem; gap: 6px; }
+      body.auction-view #phase-label, body.settled-view #phase-label { display: none; }
+      body.auction-view .dev-toggle, body.settled-view .dev-toggle { top: 9px; bottom: auto; right: 74px; padding: 3px 8px; font-size: 0.6rem; }
+      body.auction-view .dev-panel, body.settled-view .dev-panel { top: 40px; bottom: auto; }
+
+      /* HUD */
+      body.auction-view .eyebrow { font-size: 0.55rem; letter-spacing: 0.08em; }
+      body.auction-view .hud-card strong { font-size: 1rem; }
+      body.auction-view .coin { font-size: 0.9rem; margin-left: 3px; }
+      body.auction-view #timer { font-size: 1.05rem; }
+
+      /* Player / rival panels: two compact columns */
+      body.auction-view .side-panel { flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 6px 8px; gap: 4px; border-radius: 12px; }
+      body.auction-view .panel-stat { padding: 3px 8px; font-size: 0.7rem; border-radius: 9px; }
+      body.auction-view .panel-stat b { font-size: 0.78rem; }
+
+      /* Board */
+      body.auction-view .board-wrap { padding: 6px; gap: 4px; border-radius: 14px; }
+      body.auction-view .board-title { font-size: 0.72rem; }
+      body.auction-view .board-frame { padding: 4px; border-radius: 12px; }
+      body.auction-view .board-grid { gap: 4px; }
+      body.auction-view .castle-tile { padding: 4px 5px; border-radius: 10px; gap: 1px; overflow: hidden; }
+      body.auction-view .castle-preclaim { font-size: 0.5rem; padding: 1px 4px; }
+      body.auction-view .castle-name { font-size: 0.78rem; }
+      body.auction-view .castle-bids { font-size: 0.56rem; padding-top: 2px; }
+
+      /* Bottom dock: stacked rows */
+      body.auction-view .bottom-dock { flex-direction: column; flex-wrap: nowrap; align-items: stretch; justify-content: flex-start; gap: 6px; padding: 8px 10px; }
+      body.auction-view .selected-info { gap: 8px; min-width: 0; }
+      body.auction-view .selected-icon { width: 28px; height: 28px; font-size: 1rem; flex-shrink: 0; }
+      body.auction-view .selected-info > div { min-width: 0; }
+      body.auction-view .selected-info b { font-size: 0.85rem; }
+      body.auction-view .selected-info small { font-size: 0.56rem; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      body.auction-view .bid-controls { flex: 0 0 auto; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px; }
+      body.auction-view .bid-buttons { flex-wrap: nowrap; gap: 6px; }
+      body.auction-view .bid-buttons button { flex: 1 1 0; min-width: 0; padding: 8px 4px; }
+      body.auction-view .bid-custom { width: 100%; }
+      body.auction-view .bid-custom input { flex: 1 1 auto; width: auto; min-width: 0; font-size: 16px; padding-top: 7px; padding-bottom: 7px; }
+      body.auction-view .bid-custom button { padding: 7px 16px; }
+      body.auction-view .bid-actions { flex-wrap: nowrap; gap: 6px; width: 100%; }
+      body.auction-view .claim-button, body.auction-view .lock-button { flex: 1 1 0; min-width: 0; justify-content: center; padding: 9px 6px; font-size: 0.74rem; letter-spacing: 0.04em; white-space: nowrap; }
+      body.auction-view .results-bar { flex: 0 0 auto; flex-wrap: nowrap; gap: 6px; }
+      body.auction-view .results-bar .primary-cta, body.auction-view .results-bar .secondary-cta { flex: 1 1 0; min-width: 0; margin-left: 0; padding: 12px 8px; font-size: 0.74rem; letter-spacing: 0.05em; justify-content: center; white-space: nowrap; }
+      body.auction-view .dock-foot { display: block; flex: 0 0 auto; padding-top: 4px; font-size: 0.68rem; }
+      body.auction-view .dock-foot span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+      /* Settled (sealed) screen */
+      body.settled-view .settle-screen { margin: auto 0; padding: 16px 14px; gap: 8px; border-radius: 18px; max-height: 100%; overflow-y: auto; }
+      body.settled-view .settle-seal { width: 40px; height: 40px; font-size: 1.2rem; border-radius: 12px; }
+      body.settled-view .settle-screen .overline { font-size: 0.62rem; margin: 0; }
+      body.settled-view .settle-screen h2 { font-size: clamp(1.4rem, 7vw, 1.9rem); margin-bottom: 0; }
+      body.settled-view .settle-summary { font-size: 0.78rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+      body.settled-view .result-strip { gap: 6px; margin: 2px 0 4px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      body.settled-view .result-strip div { padding: 8px 6px; border-radius: 12px; }
+      body.settled-view .result-strip small { font-size: 0.55rem; letter-spacing: 0.06em; }
+      body.settled-view .result-strip b { font-size: 1rem; }
+      body.settled-view .settle-screen > div:last-child { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+      body.settled-view .settle-screen .primary-cta, body.settled-view .settle-screen .secondary-cta { width: 100%; margin-left: 0; padding: 13px 12px; justify-content: center; }
+    }
+    /* Short phones: drop the least important text so the board keeps its room */
+    @media (max-width: 720px) and (max-height: 700px) {
+      body.auction-view .eyebrow, body.auction-view .selected-info small, body.auction-view .dock-foot { display: none; }
+      body.auction-view .hud-card, body.auction-view .timer-card { padding: 3px 8px; }
+      body.auction-view .bid-buttons button { padding: 6px 4px; }
+      body.auction-view .claim-button, body.auction-view .lock-button { padding-top: 7px; padding-bottom: 7px; }
+    }
   </style>
 </head>
 <body>
@@ -2739,6 +2810,7 @@ window.ModuleB = { initFromAuction: store => { startDuel(store).catch(e => { con
         const viewingResults = nextPhase === 'SETTLED' && !!state.viewResults;
         const showArena = nextPhase === 'AUCTION' || viewingResults;
         document.body.classList.toggle('auction-view', showArena);
+        document.body.classList.toggle('settled-view', nextPhase === 'SETTLED' && !viewingResults);
         dom.hud.hidden = !showArena;
         dom.arenaSection.hidden = !showArena;
         dom.dock.hidden = !showArena;
