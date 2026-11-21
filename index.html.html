@@ -1,0 +1,3429 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#080b16" />
+  <title>Kings &amp; Castles — Auction + Duel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    /* ==========================================================================
+       Kings & Castles — Module A Design System & Holographic Arena Styles
+       ========================================================================== */
+    :root {
+      --bg-void: #080b16;
+      --bg-elevated: rgba(13, 19, 36, 0.82);
+      --bg-panel: rgba(16, 23, 44, 0.72);
+      --border-subtle: rgba(148, 178, 255, 0.16);
+      --border-strong: rgba(212, 175, 95, 0.42);
+      --text-primary: #f4f6fb;
+      --text-muted: #9aa7c7;
+      --text-dim: #667394;
+      --gold: #eab308;
+      --gold-soft: rgba(234, 179, 8, 0.18);
+      --blue: #38bdf8;
+      --blue-deep: #1d4ed8;
+      --blue-soft: rgba(56, 189, 248, 0.16);
+      --crimson: #f43f5e;
+      --crimson-deep: #be123c;
+      --crimson-soft: rgba(244, 63, 94, 0.16);
+      --font-display: 'Cinzel', Georgia, serif;
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      min-height: 100%;
+      background-color: var(--bg-void);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    /* Animated Canvas Backdrop, Vignette & Grain */
+    #world {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      display: block;
+      pointer-events: none;
+    }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 50% 25%, rgba(56, 189, 248, 0.08), transparent 55%),
+        radial-gradient(circle at 50% 50%, transparent 45%, rgba(4, 6, 13, 0.85) 100%);
+    }
+
+    .grain {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      opacity: 0.04;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.8) 0.65px, transparent 0.65px);
+      background-size: 3px 3px;
+    }
+
+    #app {
+      position: relative;
+      z-index: 3;
+      min-height: 100vh;
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 16px clamp(14px, 3vw, 32px) 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Top Bar */
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 18px;
+      border-radius: 16px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      font-size: clamp(0.95rem, 1.8vw, 1.15rem);
+    }
+
+    .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(234, 179, 8, 0.25), rgba(56, 189, 248, 0.18));
+      border: 1px solid var(--border-strong);
+      color: var(--gold);
+      font-size: 1.15rem;
+    }
+
+    .brand i {
+      font-style: normal;
+      color: var(--gold);
+      margin: 0 2px;
+    }
+
+    .brand small {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      color: var(--text-muted);
+      padding-left: 8px;
+      border-left: 1px solid var(--border-subtle);
+    }
+
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 10px #22c55e;
+      animation: pulseDot 2s infinite;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.65; }
+    }
+
+    .icon-button {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .icon-button:hover {
+      border-color: var(--border-strong);
+      background: rgba(234, 179, 8, 0.12);
+      color: var(--gold);
+    }
+
+    .icon-button.muted {
+      opacity: 0.45;
+      color: var(--text-dim);
+    }
+
+    /* HUD Row */
+    .hud-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .hud-card, .timer-card {
+      padding: 14px 18px;
+      border-radius: 16px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .hud-card.purse {
+      border-color: rgba(56, 189, 248, 0.35);
+      box-shadow: inset 0 1px 0 rgba(56, 189, 248, 0.2);
+    }
+
+    .hud-card.enemy {
+      border-color: rgba(244, 63, 94, 0.35);
+      box-shadow: inset 0 1px 0 rgba(244, 63, 94, 0.2);
+      align-items: flex-end;
+      text-align: right;
+    }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      color: var(--text-muted);
+    }
+
+    .hud-card strong {
+      font-family: var(--font-mono);
+      font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+      font-weight: 700;
+    }
+
+    .coin {
+      margin-left: 6px;
+      color: var(--gold);
+      font-size: 1.15rem;
+    }
+
+    .coin.crimson {
+      color: var(--crimson);
+    }
+
+    .hud-card small {
+      font-size: 0.76rem;
+      color: var(--text-dim);
+    }
+
+    .timer-card {
+      align-items: center;
+      text-align: center;
+      justify-content: center;
+      border-color: var(--border-strong);
+      background: linear-gradient(180deg, rgba(24, 31, 56, 0.85), rgba(12, 17, 32, 0.9));
+    }
+
+    #timer {
+      font-family: var(--font-mono);
+      font-size: clamp(1.45rem, 2.6vw, 2rem);
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 0.06em;
+    }
+
+    #timer.urgent {
+      color: var(--crimson);
+      animation: timerPulse 0.8s infinite;
+    }
+
+    @keyframes timerPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+
+    .timer-track {
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    #timer-fill {
+      display: block;
+      height: 100%;
+      width: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--blue), var(--gold));
+      transition: width 0.25s linear;
+    }
+
+    /* Arena Layout */
+    .arena-layout {
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr) 250px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .side-panel {
+      padding: 18px;
+      border-radius: 18px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .left-panel {
+      border-top: 3px solid var(--blue);
+    }
+
+    .right-panel {
+      border-top: 3px solid var(--crimson);
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-size: 1.35rem;
+      flex-shrink: 0;
+    }
+
+    .player-avatar {
+      background: var(--blue-soft);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      color: var(--blue);
+    }
+
+    .enemy-avatar {
+      background: var(--crimson-soft);
+      border: 1px solid rgba(244, 63, 94, 0.45);
+      color: var(--crimson);
+    }
+
+    .panel-heading b {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 0.92rem;
+      letter-spacing: 0.05em;
+    }
+
+    .panel-heading small {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+    }
+
+    .panel-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .panel-stat b {
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+      font-size: 0.95rem;
+    }
+
+    .panel-stat i {
+      font-style: normal;
+      color: var(--gold);
+    }
+
+    .mini-rule {
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    .panel-note {
+      font-size: 0.8rem;
+      line-height: 1.48;
+      color: var(--text-dim);
+    }
+
+    /* 4x4 Castle Board */
+    .board-wrap {
+      padding: 18px;
+      border-radius: 20px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(14px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .board-title {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      font-family: var(--font-display);
+      letter-spacing: 0.08em;
+      font-size: 0.95rem;
+    }
+
+    .board-subtitle {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+
+    .board-frame {
+      padding: 10px;
+      border-radius: 16px;
+      background: rgba(6, 9, 19, 0.75);
+      border: 1px solid rgba(148, 178, 255, 0.12);
+    }
+
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .castle-tile {
+      position: relative;
+      min-height: 112px;
+      padding: 10px 11px;
+      border-radius: 14px;
+      background: linear-gradient(160deg, rgba(25, 35, 64, 0.85), rgba(12, 17, 32, 0.95));
+      border: 1px solid rgba(148, 178, 255, 0.18);
+      color: var(--text-primary);
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 6px;
+      transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .castle-tile:hover {
+      transform: translateY(-2px);
+      border-color: rgba(234, 179, 8, 0.55);
+    }
+
+    .castle-tile.selected {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.35), 0 10px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .castle-tile.lead-player {
+      border-color: rgba(56, 189, 248, 0.65);
+      box-shadow: inset 0 0 18px rgba(56, 189, 248, 0.14);
+    }
+
+    .castle-tile.lead-enemy {
+      border-color: rgba(244, 63, 94, 0.65);
+      box-shadow: inset 0 0 18px rgba(244, 63, 94, 0.14);
+    }
+
+    .castle-tile.lead-tied {
+      border-color: rgba(234, 179, 8, 0.7);
+      box-shadow: inset 0 0 18px rgba(234, 179, 8, 0.14);
+    }
+
+    .castle-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .castle-tier {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--gold);
+      letter-spacing: 0.06em;
+    }
+
+    .castle-preclaim {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .preclaim-player {
+      background: var(--blue-soft);
+      color: var(--blue);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+    }
+
+    .preclaim-enemy {
+      background: var(--crimson-soft);
+      color: var(--crimson);
+      border: 1px solid rgba(244, 63, 94, 0.45);
+    }
+
+    .castle-name {
+      font-family: var(--font-display);
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .castle-bids {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding-top: 4px;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .bid-p { color: var(--blue); }
+    .bid-e { color: var(--crimson); }
+
+    .board-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 18px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .board-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .legend-dot.blue { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+    .legend-dot.red { background: var(--crimson); box-shadow: 0 0 8px var(--crimson); }
+    .legend-dot.gold { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+
+    /* Bottom Dock */
+    .bottom-dock {
+      padding: 16px 20px;
+      border-radius: 18px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      backdrop-filter: blur(14px);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .selected-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .selected-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: var(--gold-soft);
+      border: 1px solid var(--border-strong);
+      color: var(--gold);
+      font-size: 1.2rem;
+    }
+
+    .selected-info b {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 1rem;
+    }
+
+    .selected-info small {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+    }
+
+    .bid-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .bid-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .bid-buttons button {
+      min-width: 58px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .bid-buttons button:hover:not(:disabled) {
+      border-color: var(--gold);
+      background: var(--gold-soft);
+      color: var(--gold);
+      transform: translateY(-1px);
+    }
+
+    .bid-buttons button:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .bid-custom {
+      display: flex;
+      gap: 6px;
+    }
+
+    .bid-custom input {
+      width: 118px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.85rem;
+      -moz-appearance: textfield;
+    }
+
+    .bid-custom input::placeholder { color: var(--text-dim); font-weight: 500; }
+    .bid-custom input:focus { outline: none; border-color: var(--gold); }
+    .bid-custom input::-webkit-outer-spin-button, .bid-custom input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+    .bid-custom button {
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .bid-custom button:hover:not(:disabled) {
+      border-color: var(--gold);
+      background: var(--gold-soft);
+      color: var(--gold);
+    }
+
+    .bid-custom input:disabled, .bid-custom button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .lock-button {
+      padding: 11px 22px;
+      border-radius: 12px;
+      border: 1px solid rgba(56, 189, 248, 0.55);
+      background: linear-gradient(135deg, #0284c7, #1d4ed8);
+      color: #ffffff;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.82rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 6px 20px rgba(29, 78, 216, 0.4);
+      transition: all 0.18s ease;
+    }
+
+    .lock-button:hover:not(:disabled) {
+      filter: brightness(1.12);
+      transform: translateY(-1px);
+    }
+
+    .lock-button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      background: rgba(148, 163, 184, 0.2);
+      border-color: rgba(148, 163, 184, 0.3);
+      box-shadow: none;
+    }
+
+    .dock-foot {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .results-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .results-bar[hidden], .bid-controls[hidden] { display: none; }
+    .keyboard-hint {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+    }
+
+    /* Entry Screen */
+    .entry-screen {
+      margin: auto 0;
+      padding: clamp(24px, 4vw, 48px);
+      border-radius: 24px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+      gap: 36px;
+      align-items: center;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+    }
+
+    .crest {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-size: 1.6rem;
+      color: var(--gold);
+      background: var(--gold-soft);
+      border: 1px solid var(--border-strong);
+      margin-bottom: 14px;
+    }
+
+    .overline {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      color: var(--gold);
+      margin-bottom: 10px;
+    }
+
+    .entry-copy h1, .toss-screen h2, .settle-screen h2 {
+      font-family: var(--font-display);
+      font-size: clamp(2.1rem, 4.5vw, 3.4rem);
+      line-height: 1.08;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .entry-copy h1 em, .toss-screen h2 em, .settle-screen h2 em {
+      font-style: italic;
+      color: var(--blue);
+    }
+
+    .entry-desc {
+      max-width: 520px;
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+      margin-bottom: 22px;
+    }
+
+    .entry-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+
+    .entry-meta span {
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .entry-meta b {
+      color: var(--gold);
+      margin-right: 4px;
+    }
+
+    .primary-cta {
+      padding: 15px 28px;
+      border-radius: 14px;
+      border: 1px solid rgba(234, 179, 8, 0.65);
+      background: linear-gradient(135deg, #eab308, #ca8a04);
+      color: #090d1a;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.88rem;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 10px 28px rgba(234, 179, 8, 0.3);
+      transition: transform 0.18s ease, filter 0.18s ease;
+    }
+
+    .primary-cta:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.06);
+    }
+
+    .secondary-cta {
+      margin-left: 10px;
+      padding: 15px 22px;
+      border-radius: 14px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 0.82rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .secondary-cta:hover {
+      border-color: var(--border-strong);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .entry-foot {
+      margin-top: 14px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+    }
+
+    /* Animated CSS Hero Castle & Orbits */
+    .entry-visual {
+      position: relative;
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .orbit {
+      position: absolute;
+      border-radius: 999px;
+      border: 1px dashed rgba(56, 189, 248, 0.25);
+      pointer-events: none;
+    }
+
+    .orbit-one {
+      width: 260px;
+      height: 260px;
+      animation: spinSlow 24s linear infinite;
+    }
+
+    .orbit-two {
+      width: 320px;
+      height: 320px;
+      border-color: rgba(234, 179, 8, 0.2);
+      animation: spinSlow 36s linear reverse infinite;
+    }
+
+    @keyframes spinSlow {
+      to { transform: rotate(360deg); }
+    }
+
+    .hero-castle {
+      position: relative;
+      width: 210px;
+      height: 150px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 2;
+      animation: floatCastle 4s ease-in-out infinite;
+    }
+
+    @keyframes floatCastle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .hero-wall {
+      position: absolute;
+      bottom: 0;
+      width: 190px;
+      height: 76px;
+      border-radius: 8px 8px 4px 4px;
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.25), rgba(15, 23, 42, 0.92));
+      border: 1px solid rgba(56, 189, 248, 0.45);
+    }
+
+    .hero-tower {
+      position: relative;
+      width: 42px;
+      border-radius: 6px 6px 0 0;
+      background: linear-gradient(180deg, rgba(234, 179, 8, 0.35), rgba(15, 23, 42, 0.95));
+      border: 1px solid var(--border-strong);
+      z-index: 2;
+    }
+
+    .tower-left { height: 112px; margin-right: 12px; }
+    .tower-mid { height: 138px; width: 52px; z-index: 3; }
+    .tower-right { height: 112px; margin-left: 12px; }
+
+    .hero-gate {
+      position: absolute;
+      bottom: 0;
+      width: 34px;
+      height: 44px;
+      border-radius: 17px 17px 0 0;
+      background: #060913;
+      border: 1px solid var(--border-strong);
+      border-bottom: none;
+      z-index: 4;
+    }
+
+    .hero-flag {
+      position: absolute;
+      top: -22px;
+      font-size: 1.35rem;
+      color: var(--gold);
+      z-index: 5;
+      text-shadow: 0 0 14px rgba(234, 179, 8, 0.7);
+    }
+
+    .visual-label {
+      margin-top: 26px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      color: var(--text-muted);
+      z-index: 2;
+    }
+
+    .label-line {
+      width: 48px;
+      height: 2px;
+      background: var(--gold);
+      margin-bottom: 4px;
+    }
+
+    .visual-label small {
+      font-size: 0.62rem;
+      color: var(--text-dim);
+    }
+
+    /* Coin Toss Screen */
+    .toss-screen, .settle-screen {
+      margin: auto 0;
+      padding: clamp(28px, 5vw, 56px);
+      border-radius: 24px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      backdrop-filter: blur(16px);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .coin-stage {
+      margin: 12px 0;
+      perspective: 700px;
+    }
+
+    .toss-coin {
+      width: 108px;
+      height: 108px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #fde047, #ca8a04 70%, #854d0e);
+      border: 3px solid rgba(254, 240, 138, 0.8);
+      box-shadow: 0 0 36px rgba(234, 179, 8, 0.45);
+      display: grid;
+      place-items: center;
+      font-size: 2.5rem;
+      color: #1c1917;
+      animation: coinIdle 1.8s ease-in-out infinite;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    @keyframes coinFlip {
+      0% { transform: rotateY(0deg) scale(1); }
+      50% { transform: rotateY(180deg) scale(1.08); }
+      100% { transform: rotateY(360deg) scale(1); }
+    }
+
+    .toss-coin:hover { box-shadow: 0 0 52px rgba(234, 179, 8, 0.7); } /* no filter here: filter flattens preserve-3d and flips the visible face */
+    .toss-coin:focus-visible { outline: 2px solid var(--blue); outline-offset: 6px; }
+
+    .toss-coin.flipping {
+      animation: coinToss 1.45s cubic-bezier(0.25, 0.7, 0.35, 1) forwards;
+      cursor: default;
+      filter: none;
+    }
+
+    @keyframes coinIdle {
+      0%, 100% { transform: translateY(0) rotateY(var(--ry, 0deg)); }
+      50% { transform: translateY(-8px) rotateY(calc(var(--ry, 0deg) + 14deg)); }
+    }
+
+    @keyframes coinToss {
+      0% { transform: translateY(0) rotateY(var(--ry, 0deg)) scale(1); }
+      45% { transform: translateY(-130px) rotateY(900deg) scale(1.3); }
+      100% { transform: translateY(0) rotateY(1800deg) scale(1); }
+    }
+
+    .toss-message.ready { animation: timerPulse 1.4s infinite; }
+
+    .coin-shadow {
+      width: 76px;
+      height: 12px;
+      margin: 12px auto 0;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.6);
+      filter: blur(4px);
+    }
+
+    .toss-message {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      letter-spacing: 0.14em;
+      color: var(--gold);
+    }
+
+    .toss-progress {
+      width: min(320px, 80vw);
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+    }
+
+    .toss-progress span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--blue), var(--gold));
+      transition: width 1.6s ease-out;
+    }
+
+    .toss-progress.active span {
+      width: 100%;
+    }
+
+    /* Toss side selection */
+    .toss-coin { transform-style: preserve-3d; }
+    .toss-coin .coin-face { grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: translateZ(1px); }
+    .toss-coin .coin-face.tails { transform: rotateY(180deg) translateZ(1px); }
+    .toss-coin.locked { opacity: 0.55; cursor: not-allowed; }
+    .toss-coin.flipping.res-tails { animation-name: coinTossTails; }
+    @keyframes coinTossTails {
+      0% { transform: translateY(0) rotateY(var(--ry, 0deg)) scale(1); }
+      45% { transform: translateY(-130px) rotateY(990deg) scale(1.3); }
+      100% { transform: translateY(0) rotateY(1980deg) scale(1); }
+    }
+    /* Coin turns to show the called side */
+    .toss-coin.pick-heads { --ry: 0deg; animation: coinPickHeads 0.8s cubic-bezier(0.2, 0.7, 0.3, 1) forwards, coinIdle 1.8s ease-in-out 0.8s infinite; }
+    .toss-coin.pick-tails { --ry: 180deg; animation: coinPickTails 0.8s cubic-bezier(0.2, 0.7, 0.3, 1) forwards, coinIdle 1.8s ease-in-out 0.8s infinite; }
+    @keyframes coinPickHeads { from { transform: rotateY(var(--from, 0deg)); } to { transform: rotateY(720deg); } }
+    @keyframes coinPickTails { from { transform: rotateY(var(--from, 0deg)); } to { transform: rotateY(900deg); } }
+    .toss-call { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .toss-call button {
+      padding: 12px 22px;
+      border-radius: 14px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .toss-call button:hover:not(:disabled) { border-color: var(--gold); background: var(--gold-soft); color: var(--gold); transform: translateY(-1px); }
+    .toss-call button.selected {
+      border-color: rgba(234, 179, 8, 0.8);
+      background: linear-gradient(135deg, #eab308, #ca8a04);
+      color: #090d1a;
+      box-shadow: 0 8px 22px rgba(234, 179, 8, 0.3);
+    }
+    .toss-call button:disabled { cursor: default; }
+    .toss-call button:disabled:not(.selected) { opacity: 0.4; }
+
+    /* Settlement Screen */
+    .settle-seal {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 1.5rem;
+      color: var(--gold);
+      background: var(--gold-soft);
+      border: 1px solid var(--border-strong);
+    }
+
+    .settle-summary {
+      max-width: 540px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .result-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(110px, 1fr));
+      gap: 12px;
+      width: 100%;
+      max-width: 520px;
+      margin: 8px 0 12px;
+    }
+
+    .result-strip div {
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .result-strip small {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+    }
+
+    .result-strip b {
+      font-family: var(--font-mono);
+      font-size: 1.25rem;
+      color: var(--text-primary);
+    }
+
+    .result-strip i {
+      font-style: normal;
+      color: var(--gold);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.05em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 40;
+      max-width: 90vw;
+      text-align: center;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* DEV Panel */
+    .dev-toggle {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 30;
+      padding: 7px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 178, 255, 0.25);
+      background: rgba(10, 15, 28, 0.88);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+    }
+
+    .dev-toggle:hover {
+      color: var(--gold);
+      border-color: var(--border-strong);
+    }
+
+    .dev-panel {
+      position: fixed;
+      right: 16px;
+      bottom: 54px;
+      z-index: 30;
+      width: 210px;
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(10, 15, 28, 0.96);
+      border: 1px solid var(--border-strong);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .dev-panel b {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+    }
+
+    .dev-panel button {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .dev-panel button:hover {
+      border-color: var(--gold);
+      background: var(--gold-soft);
+    }
+
+    .dev-panel small {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+    }
+
+    /* Castle coordinates, claim button */
+    .castle-name { font-size: 1.05rem; }
+    .castle-coord {
+      font-family: var(--font-mono);
+      font-size: 0.64rem;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .bid-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .claim-button {
+      padding: 11px 18px;
+      border-radius: 12px;
+      border: 1px solid rgba(234, 179, 8, 0.6);
+      background: rgba(234, 179, 8, 0.12);
+      color: var(--gold);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .claim-button:hover:not(:disabled) {
+      background: rgba(234, 179, 8, 0.26);
+      transform: translateY(-1px);
+    }
+
+    .claim-button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Responsive Breakpoints */
+    @media (max-width: 1024px) {
+      .arena-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .hud-card.enemy {
+        align-items: flex-start;
+        text-align: left;
+      }
+
+      .entry-screen {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .hud-row {
+        grid-template-columns: 1fr;
+      }
+
+      .board-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .brand small {
+        display: none;
+      }
+    }
+
+    /* Auction screen: fit everything in one viewport (no scrolling) */
+    body.auction-view { overflow: hidden; }
+    body.auction-view #app { height: 100vh; height: 100dvh; min-height: 0; padding: 8px clamp(10px, 2vw, 24px); gap: 8px; }
+    body.auction-view .topbar { padding: 6px 14px; border-radius: 12px; }
+    body.auction-view .brand-mark { width: 28px; height: 28px; }
+    body.auction-view .hud-row { gap: 8px; }
+    body.auction-view .hud-card, body.auction-view .timer-card { padding: 6px 14px; gap: 0; border-radius: 12px; }
+    body.auction-view .hud-card small { display: none; }
+    body.auction-view .hud-card strong { font-size: clamp(1.1rem, 2vw, 1.45rem); }
+    body.auction-view #timer { font-size: clamp(1.15rem, 2vw, 1.5rem); }
+    body.auction-view .timer-track { margin-top: 2px; height: 5px; }
+    body.auction-view .arena-layout { flex: 1 1 auto; min-height: 0; gap: 10px; align-items: stretch; }
+    body.auction-view .side-panel { align-self: start; padding: 10px 12px; gap: 8px; border-radius: 14px; }
+    body.auction-view .panel-stat { padding: 6px 10px; }
+    body.auction-view .avatar { width: 34px; height: 34px; }
+    body.auction-view .board-wrap { min-height: 0; padding: 10px; gap: 6px; border-radius: 16px; }
+    body.auction-view .board-frame { flex: 1 1 auto; min-height: 0; display: flex; padding: 6px; }
+    body.auction-view .board-grid { flex: 1 1 auto; min-height: 0; grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 6px; }
+    body.auction-view .castle-tile { min-height: 0; padding: 5px 9px; gap: 2px; }
+    body.auction-view .castle-tile:hover { transform: none; }
+    body.auction-view .castle-coord { display: none; }
+    body.auction-view .bottom-dock { padding: 8px 14px; gap: 6px 16px; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; border-radius: 14px; }
+    body.auction-view .selected-icon { width: 32px; height: 32px; }
+    body.auction-view .bid-controls { flex: 1 1 auto; justify-content: flex-end; gap: 10px; }
+    body.auction-view .bid-buttons button { padding: 7px 12px; }
+    body.auction-view .bid-custom input, body.auction-view .bid-custom button { padding-top: 7px; padding-bottom: 7px; }
+    body.auction-view .lock-button { padding: 8px 18px; }
+    body.auction-view .claim-button { padding-top: 8px; padding-bottom: 8px; }
+    body.auction-view .dock-foot { flex: 1 1 100%; padding-top: 4px; }
+    @media (max-height: 820px) { body.auction-view .panel-note, body.auction-view .mini-rule { display: none; } }
+    @media (max-width: 1024px) {
+      body.auction-view .arena-layout { grid-template-columns: 1fr 1fr; grid-template-rows: auto minmax(0, 1fr); }
+      body.auction-view .board-wrap { grid-column: 1 / -1; grid-row: 2; }
+      body.auction-view .left-panel { grid-column: 1; grid-row: 1; }
+      body.auction-view .right-panel { grid-column: 2; grid-row: 1; }
+      body.auction-view .panel-note, body.auction-view .mini-rule, body.auction-view .panel-heading small { display: none; }
+      body.auction-view .side-panel { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+      body.auction-view .panel-stat { gap: 8px; }
+    }
+    @media (max-width: 720px) {
+      body.auction-view .hud-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      body.auction-view .hud-card, body.auction-view .timer-card { padding: 5px 8px; }
+      body.auction-view .board-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      body.auction-view .castle-bids { flex-direction: column; align-items: flex-start; font-size: 0.62rem; gap: 0; }
+      body.auction-view .castle-tier { font-size: 0.58rem; }
+      body.auction-view .castle-name { font-size: 0.7rem; }
+      body.auction-view .board-legend, body.auction-view .board-subtitle, body.auction-view .panel-heading { display: none; }
+      body.auction-view .brand small { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated Holographic Backdrop -->
+  <canvas id="world" aria-hidden="true"></canvas>
+  <div class="vignette"></div>
+  <div class="grain"></div>
+
+  <main id="app">
+    <!-- Top Arena Bar -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">♜</span>
+        <span>KINGS <i>&amp;</i> CASTLES</span>
+        <small>THE HOLOGRAPHIC ARENA</small>
+      </div>
+      <div class="top-right">
+        <span class="live-dot"></span>
+        <span id="phase-label">ARENA INITIALIZED</span>
+        <button class="icon-button" id="sound-toggle" aria-label="Toggle sound" title="Toggle synthesized audio">♫</button>
+      </div>
+    </header>
+
+    <!-- Live Auction HUD -->
+    <section class="hud-row" id="hud" hidden>
+      <div class="hud-card purse">
+        <span class="eyebrow">YOUR BID RESERVE</span>
+        <div><strong id="player-budget">15</strong><span class="coin">◉</span></div>
+        <small>Uncommitted coins</small>
+      </div>
+      <div class="timer-card">
+        <span class="eyebrow">AUCTION CLOSES IN</span>
+        <strong id="timer">02:00</strong>
+        <div class="timer-track"><span id="timer-fill"></span></div>
+      </div>
+      <div class="hud-card enemy">
+        <span class="eyebrow">RIVAL RESERVE</span>
+        <div><strong id="enemy-budget">15</strong><span class="coin crimson">◉</span></div>
+        <small>AI bidder</small>
+      </div>
+    </section>
+
+    <!-- Main 4x4 Arena & Side Panels -->
+    <section class="arena-layout" id="arena-section" hidden>
+      <aside class="side-panel left-panel" id="player-panel">
+        <div class="panel-heading">
+          <span class="avatar player-avatar">♙</span>
+          <div>
+            <b>THE CHALLENGER</b>
+            <small>PLAYER • BLUE BANNER</small>
+          </div>
+        </div>
+        <div class="panel-stat"><span>Vault</span><b id="player-vault">0 <i>◉</i></b></div>
+        <div class="panel-stat"><span>Pre-claims</span><b id="player-claims">0 / 2</b></div>
+        <div class="mini-rule"></div>
+        <p class="panel-note">Lead on your two strongest castles to begin the duel with a foothold. Already lead a castle? Press ★ CLAIM HERE to move a claim onto it for free.</p>
+      </aside>
+
+      <section class="board-wrap" aria-label="4 by 4 castle auction board">
+        <div class="board-title">
+          <span>THE FOUR KINGDOMS</span>
+          <span class="board-subtitle">16 CASTLES · 2 CLAIMS EACH</span>
+        </div>
+        <div class="board-frame">
+          <div class="board-grid" id="board"></div>
+        </div>
+        <div class="board-legend">
+          <span><i class="legend-dot blue"></i> YOU LEAD</span>
+          <span><i class="legend-dot red"></i> RIVAL LEADS</span>
+          <span><i class="legend-dot gold"></i> TIED</span>
+        </div>
+      </section>
+
+      <aside class="side-panel right-panel" id="enemy-panel">
+        <div class="panel-heading">
+          <span class="avatar enemy-avatar">♟</span>
+          <div>
+            <b>THE IRON REGENT</b>
+            <small>AI OPPONENT • CRIMSON</small>
+          </div>
+        </div>
+        <div class="panel-stat"><span>Vault</span><b id="enemy-vault">0 <i>◉</i></b></div>
+        <div class="panel-stat"><span>Pre-claims</span><b id="enemy-claims">0 / 2</b></div>
+        <div class="mini-rule"></div>
+        <p class="panel-note">The Regent weighs strategic value, rival pressure and remaining purse.</p>
+      </aside>
+    </section>
+
+    <!-- Bottom Bidding Dock -->
+    <section class="bottom-dock" id="dock" hidden>
+      <div class="selected-info">
+        <span class="selected-icon">♜</span>
+        <div>
+          <b id="selected-name">Castle of the Ember Crown</b>
+          <small id="selected-status">UNCONTESTED · SELECT A BID</small>
+        </div>
+      </div>
+      <div class="bid-controls">
+        <div class="bid-buttons">
+          <button data-bid="1">+1</button>
+          <button data-bid="2">+2</button>
+          <button data-bid="5">+5</button>
+          <button data-bid="max">MAX</button>
+        </div>
+        <div class="bid-custom">
+          <input type="number" id="bid-amount" min="1" step="1" inputmode="numeric" placeholder="Type amount" aria-label="Type bid amount" />
+          <button type="button" id="bid-custom-btn">BID</button>
+        </div>
+        <div class="bid-actions">
+          <button class="claim-button" id="claim-here" disabled>★ CLAIM HERE</button>
+          <button class="lock-button" id="lock-in">LOCK IN <span>↗</span></button>
+        </div>
+      </div>
+      <div class="results-bar" id="results-bar" hidden>
+        <button class="primary-cta" id="res-battle">LET'S BATTLE! <span>⚔</span></button>
+        <button class="secondary-cta" id="res-new">NEW MATCH</button>
+      </div>
+      <div class="dock-foot">
+        <span id="bid-feedback">Select a castle to begin bidding.</span>
+      </div>
+    </section>
+
+    <!-- Entry Screen -->
+    <section class="entry-screen" id="entry-screen">
+      <div class="entry-copy">
+        <div class="crest">♜</div>
+        <p class="overline">A KINGDOM IS WON, NOT GIVEN</p>
+        <h1>Claim your<br/><em>place in legend.</em></h1>
+        <p class="entry-desc">Sixteen castles. One rival. Two minutes to stake your claim before the cards are dealt.</p>
+        <div class="entry-meta">
+          <span><b>01</b> COIN TOSS</span>
+          <span><b>02</b> LIVE AUCTION</span>
+          <span><b>03</b> DUEL</span>
+        </div>
+        <button class="primary-cta" id="enter">ENTER ARENA <span>⚔</span></button>
+        <p class="entry-foot">A SINGLE MATCH • 30 COINS IN THE PRIZE POOL</p>
+      </div>
+      <div class="entry-visual">
+        <div class="orbit orbit-one"></div>
+        <div class="orbit orbit-two"></div>
+        <div class="hero-castle">
+          <div class="hero-tower tower-left"></div>
+          <div class="hero-tower tower-mid"></div>
+          <div class="hero-tower tower-right"></div>
+          <div class="hero-wall"></div>
+          <div class="hero-gate"></div>
+          <div class="hero-flag">♜</div>
+        </div>
+        <div class="visual-label">
+          <span class="label-line"></span>
+          <span>THE ROYAL ARENA</span>
+          <small>EST. IN THE AGE OF ASH</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cryptographic Coin Toss Screen -->
+    <section class="toss-screen" id="toss-screen" hidden>
+      <p class="overline">FATE TAKES THE FIRST MOVE</p>
+      <h2>THE COIN OF<br/><em>THE CROWN</em></h2>
+      <div class="toss-call" id="toss-call" role="group" aria-label="Call a side of the coin">
+        <button type="button" id="call-heads" data-call="heads" aria-pressed="false">♜ HEADS</button>
+        <button type="button" id="call-tails" data-call="tails" aria-pressed="false">♛ TAILS</button>
+      </div>
+      <div class="coin-stage">
+        <div class="toss-coin locked" id="toss-coin" role="button" tabindex="0" aria-label="Call a side, then tap the coin to toss"><span class="coin-face heads">♜</span><span class="coin-face tails">♛</span></div>
+        <div class="coin-shadow"></div>
+      </div>
+      <p id="toss-message" class="toss-message ready">CALL YOUR SIDE: HEADS OR TAILS</p>
+      <div class="toss-progress" id="toss-progress"><span></span></div>
+    </section>
+
+    <!-- Settlement Screen -->
+    <section class="settle-screen" id="settle-screen" hidden>
+      <div class="settle-seal">✦</div>
+      <p class="overline">AUCTION SEALED</p>
+      <h2>Your claim is<br/><em>etched in stone.</em></h2>
+      <p class="settle-summary" id="settle-summary">The auction result has been prepared for the duel.</p>
+      <div class="result-strip">
+        <div><small>YOUR CLAIMS</small><b id="result-player-claims">0</b></div>
+        <div><small>RIVAL CLAIMS</small><b id="result-enemy-claims">0</b></div>
+        <div><small>PRIZE POOL</small><b>30 <i>◉</i></b></div>
+      </div>
+      <div>
+        <button class="primary-cta" id="show-result">LET'S BATTLE! <span>⚔</span></button>
+        <button class="secondary-cta" id="view-auction">VIEW AUCTION RESULTS</button>
+      </div>
+    </section>
+
+    <!-- Non-blocking Status Toast -->
+    <div class="toast" id="toast" role="status"></div>
+
+    <!-- Developer Tools -->
+    <button class="dev-toggle" id="dev-toggle">DEV</button>
+    <div class="dev-panel" id="dev-panel" hidden>
+      <b>DEVELOPER CONTROLS</b>
+      <button id="skip-toss">Skip toss</button>
+      <button id="end-auction">Settle auction</button>
+      <button id="reset-vaults">Reset vaults</button>
+      <small>Test tools • not part of player HUD</small>
+    </div>
+  </main>
+
+  <script id="module-b">
+(() => {
+'use strict';
+//#LOGIC-START
+const ARENA_CONFIG = { PAWN_CAP_PER_PLAYER: 4, TURN_DURATION_MS: 40000, CHECK_DEFENSE_DURATION_MS: 40000, ROUND_PURSE: 30, CENTRAL_POOL_SHARE: 15, GRIMOIRE_POS: { x: 5.75 }, ASH_PYRE_POS: { x: -5.75 }, ENEMY_HAND_Z: -5.75, PLAYER_HAND_Z: 5.45, CELL: 2.0 };
+const PALETTE = { BG_ARENA_VOID: '#080b16', GOLD_ROYAL_PRIMARY: '#eab308', GOLD_ROYAL_HIGHLIGHT: '#FBBF24', PLAYER_BLUE_CORE: '#2563EB', PLAYER_BLUE_GLOW: '#38bdf8', ENEMY_CRIMSON_CORE: '#E11D48', ENEMY_CRIMSON_GLOW: '#f43f5e', ALERT_DANGER_RED: '#EF4444', CARD_FACE_IVORY: '#F8FAFC', SUIT_SPADES_INK: '#0F172A', SUIT_HEARTS_CRIMSON: '#DC2626', SUIT_CLUBS_EMERALD: '#059669', SUIT_DIAMONDS_ROYAL: '#2563EB', JOKER_COSMIC_BG: '#1E1B4B', SLOT_UNCLAIMED: '#D97706', SPADES_COUPLE_AURA: '#10B981', CHECK_ALARM_AMBER: '#F59E0B', CHECKMATE_EMERALD: '#00FF44', PYRE_EMBER_ORANGE: '#F97316' };
+const LINES = [[0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15],[0,4,8,12],[1,5,9,13],[2,6,10,14],[3,7,11,15],[0,5,10,15],[3,6,9,12]];
+const findLine = (cs, a) => LINES.find(l => l.every(i => cs[i].owner === a)) || null;
+
+function resolveCombat(attackCards, d) {
+  if (!d || attackCards.length === 0 || attackCards.length > 2) return { valid: false, reason: 'INVALID_SELECTION', orderedStack: [] };
+  if (attackCards.length === 2) {
+    const [c1, c2] = attackCards;
+    if (c1.suit !== 'SPADES' || c2.suit !== 'SPADES') return { valid: false, reason: 'ONLY_SPADES_CAN_COUPLE', orderedStack: [] };
+    const sum = c1.spadesCoupleVal + c2.spadesCoupleVal;
+    if (sum % 2 !== 0) return { valid: false, reason: 'SPADES_COUPLE_NOT_EVEN', orderedStack: [] };
+    if (d.suit === 'JOKER') { if (!(c1.isFaceCard || c2.isFaceCard)) return { valid: false, reason: 'JOKER_REQUIRES_FACE_CARD', orderedStack: [] }; }
+    else if (sum <= d.spadesCoupleVal) return { valid: false, reason: 'SPADES_COUPLE_TOO_WEAK', orderedStack: [] };
+    return { valid: true, reason: 'SPADES_EVEN_COUPLE', orderedStack: c1.spadesCoupleVal >= c2.spadesCoupleVal ? [c2, c1] : [c1, c2] };
+  }
+  const a = attackCards[0];
+  if (d.suit === 'JOKER') return (a.suit === 'JOKER' || a.isFaceCard) ? { valid: true, reason: 'JOKER_CONQUERED', orderedStack: [a] } : { valid: false, reason: 'ONLY_FACE_OR_JOKER_BEATS_JOKER', orderedStack: [] };
+  if (a.suit === 'JOKER') return { valid: true, reason: 'JOKER_SUPREMACY', orderedStack: [a] };
+  if (a.rank === 1) {
+    if (d.rank === 12) return { valid: true, reason: 'ACE_BEATS_ANY_QUEEN', orderedStack: [a] };
+    if (d.rank === 13 && a.suit === d.suit) return { valid: true, reason: 'ACE_BEATS_SAME_SUIT_KING', orderedStack: [a] };
+  }
+  if (a.basePower >= d.basePower) return { valid: true, reason: 'STANDARD_POWER_WIN', orderedStack: [a] };
+  return { valid: false, reason: 'INSUFFICIENT_POWER', orderedStack: [] };
+}
+
+function rndInt(n) { const b = new Uint32Array(1), lim = Math.floor(4294967296 / n) * n; let x; do { crypto.getRandomValues(b); x = b[0]; } while (x >= lim); return x % n; }
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = rndInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function buildDeck() {
+  const T = { SPADES: 1, HEARTS: 2, CLUBS: 3, DIAMONDS: 4 }, L = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'], out = [];
+  for (let d = 0; d < 2; d++) {
+    for (const s in T) for (let r = 1; r <= 13; r++) out.push({ id: `D${d}_${s}_${r}`, suit: s, rank: r, suitTier: T[s], basePower: T[s] * 100 + r, spadesCoupleVal: r === 13 ? 14 : r, isFaceCard: r >= 11, label: L[r - 1] });
+    for (let j = 0; j < 2; j++) out.push({ id: `D${d}_JOKER_${j}`, suit: 'JOKER', rank: 99, suitTier: 5, basePower: 10000, spadesCoupleVal: 0, isFaceCard: false, label: '★' });
+  }
+  return out;
+}
+function computeSettlement(castles, ar, reason, winner, line) {
+  const half = ARENA_CONFIG.CENTRAL_POOL_SHARE, full = ARENA_CONFIG.ROUND_PURSE;
+  const cp = winner === 'PLAYER' ? full : winner === 'TIE' ? half : 0, ce = winner === 'ENEMY' ? full : winner === 'TIE' ? half : 0;
+  let pc = 0, ec = 0, un = 0;
+  for (const c of castles) { if (c.owner === 'PLAYER') pc += c.coinPot; else if (c.owner === 'ENEMY') ec += c.coinPot; else un += c.coinPot; }
+  const split = un / 2;
+  return { endReason: reason, winner, winningLine: line, centralPoolAwardPlayer: cp, centralPoolAwardEnemy: ce, playerClaimedCastlesCoins: pc, enemyClaimedCastlesCoins: ec, unclaimedSplitEach: split, playerVaultRefundFromAuction: ar.playerVaultRefund, enemyVaultRefundFromAuction: ar.enemyVaultRefund, totalRoundCoinsPlayer: cp + pc + split, totalRoundCoinsEnemy: ce + ec + split, updatedPlayerVault: 0, updatedEnemyVault: 0 };
+}
+//#LOGIC-END
+
+/* ============================ helpers ============================ */
+const $ = s => document.querySelector(s), sleep = ms => new Promise(r => setTimeout(r, ms)), now = () => performance.now();
+const lerp = (a, b, t) => a + (b - a) * t, sm = t => t * t * (3 - 2 * t), c01 = t => Math.min(1, Math.max(0, t));
+const opp = a => a === 'PLAYER' ? 'ENEMY' : 'PLAYER', fmt = n => Number.isInteger(n) ? String(n) : n.toFixed(1);
+const SYM = { SPADES: '♠', HEARTS: '♥', CLUBS: '♣', DIAMONDS: '♦' };
+const INK = { SPADES: PALETTE.SUIT_SPADES_INK, HEARTS: PALETTE.SUIT_HEARTS_CRIMSON, CLUBS: PALETTE.SUIT_CLUBS_EMERALD, DIAMONDS: PALETTE.SUIT_DIAMONDS_ROYAL, JOKER: '#FBBF24' };
+const REASON = { INSUFFICIENT_POWER: 'Too weak for that Castle', SPADES_COUPLE_NOT_EVEN: 'Spades couple sum must be even', SPADES_COUPLE_TOO_WEAK: 'Couple sum must beat the defender', ONLY_SPADES_CAN_COUPLE: 'Only Spades can couple', ONLY_FACE_OR_JOKER_BEATS_JOKER: 'Only J/Q/K or Joker beats a Joker', JOKER_REQUIRES_FACE_CARD: 'Couple needs a J♠/Q♠/K♠ vs Joker', INVALID_SELECTION: 'Invalid selection' };
+const S = ARENA_CONFIG.CELL, CW = 1.25, CH = 1.75, CT = .02;
+const GS = () => window.GameRootStore;
+const cn = i => '#' + (i + 1), stag = i => '#' + (i + 1) + ' R' + ((i >> 2) + 1) + '·C' + ((i & 3) + 1);
+
+let ac; const tone = (f, d = .1, ty = 'triangle', g = .08, dl = 0) => { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const t = ac.currentTime + dl, o = ac.createOscillator(), n = ac.createGain(); o.type = ty; o.frequency.value = f; n.gain.setValueAtTime(.0001, t); n.gain.exponentialRampToValueAtTime(g, t + .012); n.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(n); n.connect(ac.destination); o.start(t); o.stop(t + d + .02); } catch (e) {} };
+const SFX = { flip: () => tone(520, .08, 'sine'), hit: () => { tone(170, .16, 'sawtooth', .1); tone(720, .12, 'triangle', .08, .04); }, rej: () => tone(140, .22, 'square', .05), burn: () => tone(300, .25, 'sawtooth', .05), chk: () => { tone(880, .12, 'square', .07); tone(660, .2, 'square', .07, .13); }, win: () => [523, 659, 784, 1046].forEach((f, i) => tone(f, .25, 'sine', .1, i * .1)), pick: () => tone(660, .05, 'sine', .06), coin: () => tone(1318, .07, 'sine', .05), lose: () => [392, 349, 311, 262].forEach((f, i) => tone(f, .42, 'sawtooth', .06, i * .2)), draw: () => [440, 440, 523].forEach((f, i) => tone(f, .22, 'triangle', .08, i * .16)) };
+Object.assign(SFX, { whoosh: () => { tone(180, .3, 'sawtooth', .04); tone(360, .25, 'sine', .04, .05); tone(540, .2, 'sine', .03, .1); }, ignite: () => { for (let i = 0; i < 10; i++) tone(160 + Math.random() * 520, .05, 'sawtooth', .025, i * .06 + Math.random() * .03); }, thud: () => tone(80, .35, 'sine', .14) });
+
+/* ============================ state ============================ */
+const K = { fsmState: 'IDLE', vaults: { playerVault: 0, enemyVault: 0 }, auctionResult: null, moduleB: null, chronicle: [] };
+let M = null, AR = null, gid = 0, busy = false, fsm = 'IDLE', running = false, built = false, revealed = false, mate = null, reassign = null, timeoutRun = false, overlayOn = false;
+let R, scene, cam, camBase = { y: 12, z: 6 }, BOX, EDGE, backM, tweens = [], inst, dummy, ringPool = [], pts, ptsA, lastT = 0, lastSec = -1, pyreLight, glowP, glowE, sparkData;
+const V = new Map(), CV = [], H = { PLAYER: [], ENEMY: [] }, FM = new Map(), HALO = {};
+const setFsm = s => { fsm = s; K.fsmState = s; };
+const hand = a => a === 'PLAYER' ? M.playerHand : M.enemyHand;
+const cntC = a => M.castles.reduce((n, c) => n + (c.owner === a ? 1 : 0), 0);
+const log = t => { K.chronicle.push({ turn: M ? M.turnNumber : 0, text: t }); };
+const tween = (ms, fn, delay = 0) => new Promise(res => tweens.push({ t0: now(), ms, fn, res, delay }));
+
+/* ============================ procedural textures ============================ */
+function rr(x, a, b, w, h, r) { x.beginPath(); x.moveTo(a + r, b); x.arcTo(a + w, b, a + w, b + h, r); x.arcTo(a + w, b + h, a, b + h, r); x.arcTo(a, b + h, a, b, r); x.arcTo(a, b, a + w, b, r); x.closePath(); }
+function drawFace(c) {
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 716; const x = cv.getContext('2d'), J = c.suit === 'JOKER', F = '700 {s}px Inter,Arial,sans-serif';
+  if (J) { const g = x.createLinearGradient(0, 0, 512, 716); g.addColorStop(0, '#1E1B4B'); g.addColorStop(1, '#3b2a7a'); x.fillStyle = g; } else x.fillStyle = PALETTE.CARD_FACE_IVORY;
+  rr(x, 0, 0, 512, 716, 34); x.fill(); x.strokeStyle = J ? '#F59E0B' : '#E2E8F0'; x.lineWidth = 6; rr(x, 14, 14, 484, 688, 26); x.stroke();
+  const col = INK[c.suit]; x.fillStyle = col; x.textAlign = 'center'; x.textBaseline = 'middle';
+  const n = c.suitTier; for (let i = 0; i < n; i++) { x.beginPath(); x.arc(256 + (i - (n - 1) / 2) * 30, 36, 9, 0, 7); x.fill(); }
+  const corner = () => { let s = 136; x.font = F.replace('{s}', s); if (x.measureText(c.label).width > 130) { s = 108; x.font = F.replace('{s}', s); } x.fillText(c.label, 84, 128); if (!J) { x.font = F.replace('{s}', 112); x.fillText(SYM[c.suit], 84, 256); } };
+  corner(); x.save(); x.translate(512, 716); x.rotate(Math.PI); corner(); x.restore();
+  if (J) { x.shadowColor = '#F59E0B'; x.shadowBlur = 40; x.font = F.replace('{s}', 295); x.fillText('★', 256, 380); x.shadowBlur = 0; x.font = F.replace('{s}', 40); x.fillText('JOKER', 256, 580); x.strokeStyle = '#F59E0B'; x.lineWidth = 3; for (let i = 0; i < 3; i++) { x.beginPath(); x.arc(256, 380, 150 + i * 22, 0, 7); x.stroke(); } }
+  else { x.font = F.replace('{s}', 295); x.fillText(SYM[c.suit], 256, 372); }
+  return cv;
+}
+function faceMat(c) {
+  const k = c.suit === 'JOKER' ? 'J' : c.suit + c.rank;
+  if (!FM.has(k)) { const t = new THREE.CanvasTexture(drawFace(c)); t.anisotropy = Math.min(8, R.capabilities.getMaxAnisotropy()); t.encoding = THREE.sRGBEncoding; FM.set(k, new THREE.MeshStandardMaterial({ map: t, roughness: .42, metalness: .05, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: .32 })); }
+  return FM.get(k);
+}
+function makeBack() {
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 716; const x = cv.getContext('2d'), g = x.createLinearGradient(0, 0, 512, 716);
+  g.addColorStop(0, '#0f1b3a'); g.addColorStop(1, '#1a1040'); x.fillStyle = g; rr(x, 0, 0, 512, 716, 34); x.fill();
+  x.strokeStyle = 'rgba(234,179,8,.18)'; x.lineWidth = 2; for (let i = -716; i < 1228; i += 48) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i + 716, 716); x.moveTo(i + 716, 0); x.lineTo(i, 716); x.stroke(); }
+  x.strokeStyle = '#eab308'; x.lineWidth = 8; rr(x, 22, 22, 468, 672, 24); x.stroke(); x.lineWidth = 2; rr(x, 40, 40, 432, 636, 16); x.stroke();
+  x.fillStyle = '#eab308'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.shadowColor = '#eab308'; x.shadowBlur = 30; x.font = '700 280px Georgia,serif'; x.fillText('♜', 256, 370);
+  const t = new THREE.CanvasTexture(cv); t.anisotropy = 8; t.encoding = THREE.sRGBEncoding; return new THREE.MeshStandardMaterial({ map: t, roughness: .5, metalness: .2 });
+}
+function labelPlane(w, h) {
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = Math.round(256 * h / w); const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.userData.cv = cv; m.userData.tex = t; return m;
+}
+function setLabel(m, l, r, col = '#FBBF24') { const key = l + r + col; if (m.userData.k === key) return; m.userData.k = key; const cv = m.userData.cv, x = cv.getContext('2d'); x.clearRect(0, 0, cv.width, cv.height); x.fillStyle = 'rgba(8,11,22,.72)'; rr(x, 2, 2, cv.width - 4, cv.height - 4, 14); x.fill(); x.fillStyle = '#9aa7c7'; x.font = '700 30px Inter,Arial'; x.textBaseline = 'middle'; x.textAlign = 'left'; x.fillText(l, 14, cv.height / 2 + 2); x.fillStyle = col; x.textAlign = 'right'; x.fillText(r, cv.width - 14, cv.height / 2 + 2); m.userData.tex.needsUpdate = true; }
+
+function setSlotLabel(m, tag, price, col) {
+  const key = tag + '|' + price + '|' + col; if (m.userData.k === key) return; m.userData.k = key; const cv = m.userData.cv, x = cv.getContext('2d'), w = cv.width, h = cv.height;
+  x.clearRect(0, 0, w, h); x.fillStyle = 'rgba(8,11,22,.82)'; rr(x, 2, 2, w - 4, h - 4, 14); x.fill(); x.globalAlpha = .6; x.strokeStyle = col; x.lineWidth = 2; rr(x, 2, 2, w - 4, h - 4, 14); x.stroke(); x.globalAlpha = 1;
+  x.textBaseline = 'middle'; x.fillStyle = col; x.font = '800 38px Inter,Arial'; x.textAlign = 'center'; x.fillText(tag, w / 2, h / 2 + 2); m.userData.tex.needsUpdate = true;
+}
+
+// Bid total drawn directly on the castle card (bottom-left, clear of the rank/suit indices)
+function setPriceBadge(m, total, pb, eb, col) {
+  const key = total + '|' + pb + '|' + eb + '|' + col; if (m.userData.k === key) return; m.userData.k = key;
+  const cv = m.userData.cv, x = cv.getContext('2d'), w = cv.width, h = cv.height;
+  x.clearRect(0, 0, w, h); x.fillStyle = 'rgba(8,11,22,.9)'; rr(x, 3, 3, w - 6, h - 6, 22); x.fill();
+  x.strokeStyle = col; x.lineWidth = 5; rr(x, 3, 3, w - 6, h - 6, 22); x.stroke();
+  x.textBaseline = 'middle'; x.textAlign = 'center'; x.fillStyle = '#FBBF24'; x.font = '800 54px Inter,Arial'; x.fillText(fmt(total) + ' 💰', w / 2, h * .37);
+  x.font = '700 28px Inter,Arial'; x.textAlign = 'right'; x.fillStyle = '#38bdf8'; x.fillText('YOU ' + fmt(pb), w / 2 - 8, h * .77);
+  x.textAlign = 'left'; x.fillStyle = '#f43f5e'; x.fillText('AI ' + fmt(eb), w / 2 + 8, h * .77); m.userData.tex.needsUpdate = true;
+}
+
+/* ============================ scene build ============================ */
+const CSS = `body.kcb-on{overflow:hidden}body.kcb-on #app,body.kcb-on #world,body.kcb-on .vignette,body.kcb-on .grain{display:none!important}
+#kcb{position:fixed;inset:0;z-index:60;background:#080b16;font-family:var(--font-sans);color:#f4f6fb;user-select:none;-webkit-user-select:none;touch-action:manipulation}#kcb[hidden]{display:none}
+#kcbc{position:absolute;inset:0;width:100%;height:100%;display:block}
+#kcb button{font:inherit;color:inherit;cursor:pointer;border:1px solid rgba(148,178,255,.25);background:rgba(20,30,56,.85);border-radius:10px;padding:0 12px;min-height:44px;font-weight:600;font-size:13px;transition:transform .12s,box-shadow .2s,border-color .2s}
+#kcb button:active:not(:disabled){transform:scale(.96)}#kcb button:disabled{opacity:.38;cursor:not-allowed}
+.kt,.kb{position:absolute;left:0;right:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 10px;background:rgba(10,15,30,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.kt{top:0;height:56px;border-bottom:1px solid rgba(212,175,95,.3)}.kb{bottom:0;height:68px;border-top:1px solid rgba(212,175,95,.3);padding-bottom:env(safe-area-inset-bottom,0)}
+.kl,.kc,.kr,.kbr{display:flex;align-items:center;gap:8px}.kl b{font-family:var(--font-display);letter-spacing:.08em;font-size:13px;color:#eab308;white-space:nowrap}.kl b i{color:#f4f6fb;font-style:normal}
+.bdg{padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.06em;white-space:nowrap}.bdg.p{background:rgba(56,189,248,.18);color:#38bdf8;border:1px solid #38bdf8}.bdg.e{background:rgba(244,63,94,.18);color:#f43f5e;border:1px solid #f43f5e}
+.pill{font-size:11px;padding:3px 8px;border-radius:99px;background:rgba(234,179,8,.14);color:#FBBF24;border:1px solid rgba(234,179,8,.4);white-space:nowrap}
+.kc{font-size:13px;font-weight:600;white-space:nowrap}.kc .pp{color:#FBBF24}#ktime{font-variant-numeric:tabular-nums;font-family:var(--font-mono);background:rgba(8,11,22,.8);border:1px solid rgba(148,178,255,.3);padding:5px 10px;border-radius:9px;min-width:56px;text-align:center}#ktime.u{color:#EF4444;border-color:#EF4444;animation:kp .6s infinite}
+@keyframes kp{50%{box-shadow:0 0 14px #EF4444}}
+#kchk,#kpr{position:absolute;top:62px;left:50%;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:12px;padding:8px 14px;background:#0F172A;border:2px solid #F59E0B;border-radius:12px;font-weight:700;font-size:13px;box-shadow:0 0 24px rgba(245,158,11,.45);animation:kb 1s infinite;max-width:calc(100vw - 16px)}#kpr{border-color:#38bdf8;box-shadow:0 0 24px rgba(56,189,248,.4);animation:none}
+#kchk[hidden],#kpr[hidden]{display:none}@keyframes kb{50%{box-shadow:0 0 36px rgba(245,158,11,.9)}}
+.kb small{display:block;font-size:11px;color:#9aa7c7;line-height:1.35}.kb .st{font-size:12px;font-weight:600;line-height:1.4}.kb .st .pl{color:#38bdf8}.kb .st .en{color:#f43f5e}
+.kbr button{min-height:48px}#kburn{border-color:rgba(249,115,22,.55)}#kend{border-color:rgba(16,185,129,.5);font-weight:700}#kend.glow{background:rgba(16,185,129,.28);border-color:#10B981;box-shadow:0 0 18px rgba(16,185,129,.7)}
+#kmod{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:rgba(4,6,13,.72);backdrop-filter:blur(6px);padding:12px}#kmod[hidden]{display:none}
+.mc{width:min(480px,100%);max-height:calc(100vh - 24px);overflow:auto;background:linear-gradient(160deg,#10172c,#0b1020);border:1px solid rgba(212,175,95,.45);border-radius:18px;padding:22px;box-shadow:0 20px 80px rgba(0,0,0,.7)}
+.mc h2{font-family:var(--font-display);font-size:24px;letter-spacing:.05em;text-align:center;margin-bottom:4px}.mc h2.w{color:#00FF44;text-shadow:0 0 22px rgba(0,255,68,.5)}.mc h2.l{color:#f43f5e}.mc h2.d{color:#FBBF24}
+.mc .sub{text-align:center;font-size:12px;color:#9aa7c7;margin-bottom:14px}.mr{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(148,178,255,.12);font-size:14px}.mr b{font-family:var(--font-mono)}.mr.t{border-bottom:0;font-size:16px;color:#FBBF24;font-weight:700}
+.mc ul{font-size:13px;line-height:1.6;color:#cbd5e1;padding-left:18px}.mc button.cta{width:100%;margin-top:16px;min-height:52px;background:linear-gradient(135deg,#eab308,#b45309);color:#0b1020;border:0;font-weight:800;letter-spacing:.04em}
+#kdraw{position:absolute;z-index:5;right:10px;bottom:84px;width:min(300px,calc(100vw - 20px));background:rgba(12,18,36,.94);border:1px solid rgba(212,175,95,.45);border-radius:14px;padding:14px;backdrop-filter:blur(10px)}#kdraw[hidden]{display:none}
+#kdraw h4{font-family:var(--font-display);color:#eab308;font-size:15px;margin-bottom:6px}.chip{display:inline-block;margin:2px;padding:3px 7px;border-radius:6px;background:#F8FAFC;font-weight:800;font-size:13px}.chip.top{outline:2px solid #FBBF24}
+#ktoast{position:absolute;top:110px;left:50%;transform:translate(-50%,-8px);z-index:9;background:rgba(15,23,42,.95);border:1px solid #EF4444;color:#fff;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.25s}#ktoast.s{opacity:1;transform:translate(-50%,0)}
+#kvig{position:absolute;inset:0;pointer-events:none;z-index:1;box-shadow:inset 0 0 120px rgba(0,0,0,.55);transition:box-shadow .4s}#kvig.chk{box-shadow:inset 0 0 120px rgba(245,158,11,.5)}#kvig.mate{box-shadow:inset 0 0 140px rgba(0,255,68,.4)}
+#kvig.lose{box-shadow:inset 0 0 160px rgba(244,63,94,.55)}
+#kres{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:12px;overflow:hidden;background:rgba(4,6,13,.6)}#kres[hidden]{display:none}
+#kres.win{background:radial-gradient(circle at 50% 32%,rgba(234,179,8,.3),rgba(4,6,13,.82) 72%)}
+#kres.loss{background:radial-gradient(circle at 50% 32%,rgba(244,63,94,.28),rgba(4,6,13,.88) 72%);animation:kshake .7s}
+#kres.draw{background:radial-gradient(circle at 50% 32%,rgba(203,213,225,.2),rgba(4,6,13,.84) 72%)}
+#kres::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:0;animation:kflash 1s ease-out}
+#kres.win::before{background:#FBBF24}#kres.loss::before{background:#f43f5e}#kres.draw::before{background:#cbd5e1}
+@keyframes kflash{0%{opacity:.55}100%{opacity:0}}
+@keyframes kshake{10%,90%{transform:translateX(-4px)}20%,80%{transform:translateX(6px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
+.krays{position:absolute;left:50%;top:30%;width:190vmax;height:190vmax;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,rgba(251,191,36,.18) 0 6deg,transparent 6deg 18deg);-webkit-mask-image:radial-gradient(circle,#000 0,transparent 52%);mask-image:radial-gradient(circle,#000 0,transparent 52%);animation:kspin 30s linear infinite;pointer-events:none}
+@keyframes kspin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.kfx{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+.kpart{position:absolute;top:-6%;border-radius:2px;opacity:0;animation:kfall linear forwards}
+.kpart.loss{border-radius:50%;animation-name:kash}
+.kpart.coin{border-radius:0}
+@keyframes kfall{0%{transform:translateY(0) rotate(0);opacity:0}8%{opacity:1}100%{transform:translateY(112vh) rotate(720deg);opacity:.9}}
+@keyframes kash{0%{transform:translate(0,0);opacity:0}10%{opacity:.85}100%{transform:translate(50px,112vh);opacity:0}}
+.kcard{position:relative;z-index:2;width:min(580px,100%);max-height:calc(100vh - 24px);overflow:auto;background:linear-gradient(160deg,#10172c,#0b1020);border:1px solid rgba(212,175,95,.5);border-radius:20px;padding:22px 18px 18px;box-shadow:0 24px 90px rgba(0,0,0,.75);text-align:center;animation:kcin .7s cubic-bezier(.2,1.2,.3,1) both}
+.kcard.win{border-color:#FBBF24;box-shadow:0 0 70px rgba(251,191,36,.38),0 24px 90px rgba(0,0,0,.75)}
+.kcard.loss{border-color:#f43f5e;box-shadow:0 0 60px rgba(244,63,94,.32),0 24px 90px rgba(0,0,0,.8)}
+@keyframes kcin{0%{opacity:0;transform:translateY(40px) scale(.85)}100%{opacity:1;transform:none}}
+.kbadge{font-size:44px;line-height:1;margin-bottom:4px;animation:kbob 1.8s ease-in-out infinite}
+@keyframes kbob{50%{transform:translateY(-5px) scale(1.07)}}
+.ktitle{font-family:var(--font-display);font-size:clamp(28px,7.5vw,46px);letter-spacing:.08em;font-weight:800;line-height:1.08}
+.ktitle.win{background:linear-gradient(100deg,#b45309,#FBBF24 30%,#fff7c2 50%,#FBBF24 70%,#b45309);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:kslam .8s cubic-bezier(.2,1.4,.4,1) both,kshine 2.6s linear .8s infinite;filter:drop-shadow(0 0 18px rgba(251,191,36,.6))}
+.ktitle.loss{color:#f43f5e;text-shadow:0 0 24px rgba(244,63,94,.6);animation:kslam .9s cubic-bezier(.2,1.4,.4,1) both,kglitch 2.6s steps(1) 1.2s infinite}
+.ktitle.draw{color:#FBBF24;animation:kslam .8s both}
+@keyframes kslam{0%{opacity:0;transform:scale(3);filter:blur(10px)}60%{opacity:1;transform:scale(.92);filter:blur(0)}100%{opacity:1;transform:scale(1)}}
+@keyframes kshine{to{background-position:-220% 0}}
+@keyframes kglitch{0%,90%,100%{transform:none}92%{transform:translateX(-5px) skewX(8deg);text-shadow:3px 0 #38bdf8,-3px 0 #fff}95%{transform:translateX(5px) skewX(-6deg)}}
+.ksub{font-size:12px;color:#9aa7c7;margin-top:4px}.ksub2{font-size:13px;font-weight:700;margin-top:4px}.ksub2.win{color:#FBBF24}.ksub2.loss{color:#f43f5e}.ksub2.draw{color:#cbd5e1}
+.kloot{margin-top:14px;text-align:left;border:1px solid rgba(148,178,255,.16);border-radius:14px;padding:4px 14px 6px;background:rgba(255,255,255,.025)}
+.khead{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;color:#9aa7c7;text-align:center;margin:10px 0 4px}
+.klr{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px;padding:9px 0;border-bottom:1px solid rgba(148,178,255,.12);font-size:14px;opacity:0;transform:translateX(-16px);transition:opacity .35s,transform .35s}
+.klr.on{opacity:1;transform:none}.klr b{font-family:var(--font-mono)}.klr.rv{color:#9aa7c7;font-size:13px}
+.klr.tot{border-bottom:1px solid rgba(148,178,255,.12);font-size:17px;color:#FBBF24;font-weight:700}.klr.tot b{font-size:24px;text-shadow:0 0 16px rgba(251,191,36,.6)}
+.klr.tot.pop b{animation:kpopn .7s cubic-bezier(.2,1.6,.4,1)}.klr.last{border-bottom:0}
+@keyframes kpopn{0%{transform:scale(1)}40%{transform:scale(1.4)}100%{transform:scale(1)}}
+.kchips{width:100%;display:flex;flex-wrap:wrap;gap:5px}
+.kchip{font-family:var(--font-mono);font-size:11px;padding:3px 7px;border-radius:8px;border:1px solid;animation:kchip .35s cubic-bezier(.2,1.6,.4,1) both}
+.kchip.p{color:#38bdf8;border-color:#38bdf8;background:rgba(56,189,248,.12)}.kchip.e{color:#f43f5e;border-color:#f43f5e;background:rgba(244,63,94,.12)}.kchip.u{color:#9aa7c7;border-color:#475569;background:rgba(148,163,184,.1)}
+@keyframes kchip{0%{opacity:0;transform:scale(.3) translateY(10px)}100%{opacity:1;transform:none}}
+.kbids{margin-top:14px;text-align:left;opacity:0;transform:translateY(12px);transition:opacity .5s,transform .5s}.kbids.on{opacity:1;transform:none}
+.kbsum{font-size:12px;color:#cbd5e1;text-align:center;margin:6px 0 10px;line-height:1.7}
+.kbg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.kbt{border-radius:10px;padding:6px 3px;border:1px solid rgba(148,178,255,.18);background:rgba(255,255,255,.03);font-size:10px;line-height:1.4;text-align:center;font-family:var(--font-mono);color:#9aa7c7}
+.kbt b{display:block;font-size:11px;color:#f4f6fb}.kbt.p{border-color:#38bdf8;background:rgba(56,189,248,.14)}.kbt.e{border-color:#f43f5e;background:rgba(244,63,94,.14)}
+.kbt .pb{color:#38bdf8;font-weight:700}.kbt .eb{color:#f43f5e;font-weight:700}
+.kbl{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 12px;font-size:10px;color:#9aa7c7;margin-top:8px}
+.kbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.kbtns button{flex:1;min-width:130px;min-height:48px}
+#kcb .kbtns button.cta{flex-basis:100%;background:linear-gradient(135deg,#eab308,#b45309);color:#0b1020;border:0;font-weight:800;letter-spacing:.04em;min-height:52px}
+#kcb #kback{position:absolute;top:64px;left:50%;transform:translateX(-50%);z-index:9;background:linear-gradient(135deg,#eab308,#b45309);color:#0b1020;border:0;padding:0 20px;font-weight:800;box-shadow:0 0 24px rgba(234,179,8,.5)}
+#kcb #kback[hidden]{display:none}
+@media(max-width:700px){.kl b,.kc .pp{display:none}.kt{height:52px}.kt .kr button{padding:0 8px;font-size:12px}.kb{height:68px}.kb .st{font-size:11px}.kbr button{padding:0 9px;font-size:12px}}`;
+const HTML = `<div id="kcb" hidden><canvas id="kcbc"></canvas><div id="kvig"></div>
+<div class="kt"><div class="kl"><b>KINGS <i>&amp;</i> CASTLES</b><span id="kturn" class="pill">Turn #1</span><span id="kact" class="bdg p">YOUR TURN</span><span id="kunr" class="pill">Unravel 1/1</span></div>
+<div class="kc"><span class="pp">Prize Pool: 30 💰</span><span id="kvault">Vault: 0 💰</span><span id="ktime">40s</span></div>
+<div class="kr"><button id="krules">Rules</button><button id="knew">New Duel</button></div></div>
+<div id="kchk" hidden><span id="kchkt"></span><button id="kconc">🏳️ Concede Check</button></div>
+<div id="kpr" hidden><span id="kprt"></span><button id="kdecl">Decline claim</button></div>
+<div id="ktoast"></div>
+<div class="kb"><div class="st" id="kst"></div><div class="kbr"><button id="kburn">🔥 Burn Card</button><button id="kend">✅ End Turn</button><button id="kchr">📜 Chronicle</button></div></div>
+<div id="kdraw" hidden></div><div id="kmod" hidden></div><div id="kres" hidden></div><button id="kback" hidden>↩ Back to Results</button></div>`;
+
+function build() {
+  if (built) return; built = true;
+  document.head.insertAdjacentHTML('beforeend', `<style>${CSS}</style>`); document.body.insertAdjacentHTML('beforeend', HTML);
+  R = new THREE.WebGLRenderer({ canvas: $('#kcbc'), antialias: true, powerPreference: 'high-performance' });
+  R.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); R.outputEncoding = THREE.sRGBEncoding;
+  scene = new THREE.Scene(); scene.background = new THREE.Color(0x080b16); scene.fog = new THREE.Fog(0x080b16, 24, 52);
+  cam = new THREE.PerspectiveCamera(42, 1, .1, 100);
+  scene.add(new THREE.HemisphereLight(0xbcd0ff, 0x1a1020, .95)); const dl = new THREE.DirectionalLight(0xffffff, .75); dl.position.set(3, 10, 6); scene.add(dl);
+  pyreLight = new THREE.PointLight(0xf97316, 0, 7); pyreLight.position.set(ARENA_CONFIG.ASH_PYRE_POS.x, .9, 0); scene.add(pyreLight);
+  BOX = new THREE.BoxGeometry(CW, CT, CH); EDGE = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: .6 }); backM = makeBack();
+  // table
+  const tc = document.createElement('canvas'); tc.width = tc.height = 512; const tx = tc.getContext('2d'), rg = tx.createRadialGradient(256, 256, 20, 256, 256, 256);
+  rg.addColorStop(0, '#13264a'); rg.addColorStop(.6, '#0a1429'); rg.addColorStop(1, '#070b16'); tx.fillStyle = rg; tx.fillRect(0, 0, 512, 512);
+  tx.strokeStyle = 'rgba(234,179,8,.16)'; tx.lineWidth = 2; for (const r of [250, 215, 120]) { tx.beginPath(); tx.arc(256, 256, r, 0, 7); tx.stroke(); }
+  tx.strokeStyle = 'rgba(56,189,248,.07)'; for (let i = 0; i < 512; i += 32) { tx.beginPath(); tx.moveTo(i, 0); tx.lineTo(i, 512); tx.moveTo(0, i); tx.lineTo(512, i); tx.stroke(); }
+  const tt = new THREE.CanvasTexture(tc); tt.encoding = THREE.sRGBEncoding; const table = new THREE.Mesh(new THREE.CircleGeometry(10, 72), new THREE.MeshStandardMaterial({ map: tt, roughness: .85 })); table.rotation.x = -Math.PI / 2; scene.add(table);
+  const rim = new THREE.Mesh(new THREE.RingGeometry(9.5, 9.64, 96), new THREE.MeshBasicMaterial({ color: PALETTE.GOLD_ROYAL_PRIMARY })); rim.rotation.x = -Math.PI / 2; rim.position.y = .006; scene.add(rim);
+  const gm = (c) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: .1, depthWrite: false });
+  glowP = new THREE.Mesh(new THREE.PlaneGeometry(8.4, 2.1), gm(PALETTE.PLAYER_BLUE_GLOW)); glowP.rotation.x = -Math.PI / 2; glowP.position.set(0, .01, ARENA_CONFIG.PLAYER_HAND_Z); scene.add(glowP);
+  glowE = new THREE.Mesh(new THREE.PlaneGeometry(8.4, 2.1), gm(PALETTE.ENEMY_CRIMSON_GLOW)); glowE.rotation.x = -Math.PI / 2; glowE.position.set(0, .01, ARENA_CONFIG.ENEMY_HAND_Z); scene.add(glowE);
+  // castles
+  const padG = new THREE.BoxGeometry(CW + .26, .06, CH + .2);
+  const frS = new THREE.Shape(), fhw = (CW + .24) / 2, fhh = (CH + .14) / 2, fin = .07; frS.moveTo(-fhw, -fhh); frS.lineTo(fhw, -fhh); frS.lineTo(fhw, fhh); frS.lineTo(-fhw, fhh); frS.closePath();
+  const frH = new THREE.Path(); frH.moveTo(-fhw + fin, -fhh + fin); frH.lineTo(-fhw + fin, fhh - fin); frH.lineTo(fhw - fin, fhh - fin); frH.lineTo(fhw - fin, -fhh + fin); frH.closePath(); frS.holes.push(frH);
+  const frG = new THREE.ShapeGeometry(frS);
+  for (let i = 0; i < 16; i++) {
+    const x = ((i & 3) - 1.5) * S, z = ((i >> 2) - 1.5) * S;
+    const pad = new THREE.Mesh(padG, new THREE.MeshStandardMaterial({ color: 0x101c30, metalness: .5, roughness: .4 })); pad.position.set(x, .03, z); pad.userData.slot = i; scene.add(pad);
+    const frame = new THREE.Mesh(frG, new THREE.MeshBasicMaterial({ color: 0x6b5a2a, transparent: true })); frame.rotation.x = -Math.PI / 2; frame.position.set(x, .064, z); scene.add(frame);
+    const lab = labelPlane(.62, .2); lab.position.set(x, .07, z + CH / 2 + .15); scene.add(lab);
+    CV.push({ x, z, pad, frame, lab, stack: [], pawn: null });
+  }
+  // piles
+  const mk = (px) => { const m = new THREE.Mesh(new THREE.BoxGeometry(CW, 1, CH), [EDGE, EDGE, backM, backM, EDGE, EDGE]); m.position.x = px; scene.add(m); return m; };
+  CV.grim = mk(ARENA_CONFIG.GRIMOIRE_POS.x); CV.ash = mk(ARENA_CONFIG.ASH_PYRE_POS.x);
+  CV.ash.material = [EDGE, EDGE, new THREE.MeshStandardMaterial({ color: 0x2a1a16, emissive: 0xf97316, emissiveIntensity: .35 }), backM, EDGE, EDGE];
+  for (const [px, t] of [[ARENA_CONFIG.GRIMOIRE_POS.x, 'GRIMOIRE'], [ARENA_CONFIG.ASH_PYRE_POS.x, 'GRAVEYARD']]) { const l = labelPlane(1.4, .3); l.position.set(px, .02, 1.2); scene.add(l); setLabel(l, t, '', '#eab308'); }
+  // halo arcs
+  for (let k = 0; k < 4; k++) HALO[k] = new THREE.RingGeometry(.84, .94, 10, 1, k * Math.PI / 2, Math.PI / 3);
+  HALO.gold = new THREE.MeshBasicMaterial({ color: PALETTE.GOLD_ROYAL_HIGHLIGHT, side: THREE.DoubleSide, transparent: true, opacity: .9, depthWrite: false }); HALO.aura = new THREE.MeshBasicMaterial({ color: PALETTE.SPADES_COUPLE_AURA, side: THREE.DoubleSide, transparent: true, opacity: .9, depthWrite: false });
+  // sparks (instanced) + rings
+  const SPN = 200; inst = new THREE.InstancedMesh(new THREE.OctahedronGeometry(.07), new THREE.MeshBasicMaterial({ color: 0xffffff }), SPN); inst.frustumCulled = false; dummy = new THREE.Object3D(); dummy.scale.set(0, 0, 0); dummy.updateMatrix();
+  for (let i = 0; i < SPN; i++) { inst.setMatrixAt(i, dummy.matrix); inst.setColorAt(i, new THREE.Color(1, 1, 1)); } scene.add(inst);
+  sparkData = { n: SPN, i: 0, life: new Float32Array(SPN), max: new Float32Array(SPN), p: new Float32Array(SPN * 3), v: new Float32Array(SPN * 3), g: new Float32Array(SPN), live: 0 };
+  const rgG = new THREE.RingGeometry(.88, 1, 48); for (let i = 0; i < 10; i++) { const m = new THREE.Mesh(rgG, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); m.rotation.x = -Math.PI / 2; m.visible = false; scene.add(m); ringPool.push({ m, t0: 0, ms: 1 }); }
+  // ambient motes
+  const N = 130, pa = new Float32Array(N * 3); for (let i = 0; i < N; i++) { pa[i * 3] = (Math.random() - .5) * 26; pa[i * 3 + 1] = Math.random() * 8; pa[i * 3 + 2] = (Math.random() - .5) * 26; }
+  ptsA = pa; pts = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(pa, 3)), new THREE.PointsMaterial({ color: 0xFBBF24, size: .06, transparent: true, opacity: .55, depthWrite: false })); pts.frustumCulled = false; scene.add(pts);
+  for (let i = 0; i < 16; i++) { const g = CV[i]; g.lab && setSlotLabel(g.lab, stag(i), '', '#FBBF24'); }
+  // events
+  addEventListener('resize', fit); addEventListener('orientationchange', () => setTimeout(fit, 250));
+  $('#kcbc').addEventListener('pointerup', onPointer);
+  $('#kend').onclick = () => { if (canEnd()) commitTurn(); };
+  $('#kburn').onclick = humanBurn; $('#kconc').onclick = () => { if (fsm === 'CHECK_DEFENSE' && M.activeActor === 'PLAYER' && !busy) checkmate(); };
+  $('#kdecl').onclick = () => reassign && reassign.res(null);
+  $('#kback').onclick = backToResults; $('#krules').onclick = rulesModal; $('#kchr').onclick = chronicleModal; $('#knew').onclick = leave;
+  requestAnimationFrame(loop);
+}
+
+function fit() {
+  if (!R) return; const w = innerWidth, h = innerHeight, tp = (w < 700 ? 52 : 56), bt = 68 + 6; R.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix();
+  const P = [[7, 0, -6.55], [-7, 0, -6.55], [7, 0, 6.95], [-7, 0, 6.95], [0, .7, 7.05], [0, .7, -6.65]], C = [[6.3, 0, -6.0], [-6.3, 0, -6.0], [6.3, 0, 6.6], [-6.3, 0, 6.6], [0, .7, 6.7], [0, .7, -6.1]], ang = 1.0, tz = -.3, v = new THREE.Vector3();
+  const place = dd => { cam.position.set(0, Math.sin(ang) * dd, tz + Math.cos(ang) * dd); cam.lookAt(0, 0, tz); cam.updateMatrixWorld(); cam.matrixWorldInverse.copy(cam.matrixWorld).invert(); };
+  for (let d = 10; d < 90; d += .4) {
+    cam.position.set(0, Math.sin(ang) * d, tz + Math.cos(ang) * d); cam.lookAt(0, 0, tz); cam.updateMatrixWorld(); cam.matrixWorldInverse.copy(cam.matrixWorld).invert();
+    const ok = P.every(p => { v.set(...p).project(cam); return Math.abs(v.x) <= .97 && v.y <= 1 - 2 * tp / h - .015 && v.y >= -1 + 2 * bt / h + .015; });
+    if (ok) { // zoom in a little past the safe fit while the hands and piles still stay on screen
+      let best = d; for (let dd = d - .2; dd >= d * .86; dd -= .2) { place(dd); if (!C.every(p => { v.set(...p).project(cam); return Math.abs(v.x) <= .99 && v.y <= 1 - 2 * tp / h + .02 && v.y >= -1 + 2 * bt / h - .005; })) break; best = dd; }
+      place(best); camBase = { y: cam.position.y, z: cam.position.z }; break; }
+  }
+  camBase.tz = tz;
+}
+
+/* ============================ FX ============================ */
+function emit(x, y, z, col, n, o = {}) {
+  const sd = sparkData, c = new THREE.Color(col), s = o.s ?? 2.5, u0 = o.u0 ?? 1, u1 = o.u1 ?? 2.4, g = o.g ?? 6, l = o.l ?? .75;
+  for (let k = 0; k < n; k++) { const i = sd.i++ % sd.n, a = Math.random() * 6.283, sp = s * (.4 + .6 * Math.random()); sd.p[i * 3] = x; sd.p[i * 3 + 1] = y; sd.p[i * 3 + 2] = z; sd.v[i * 3] = Math.cos(a) * sp; sd.v[i * 3 + 2] = Math.sin(a) * sp; sd.v[i * 3 + 1] = lerp(u0, u1, Math.random()); sd.g[i] = g; sd.life[i] = sd.max[i] = l * (.7 + .6 * Math.random()); inst.setColorAt(i, c); }
+  inst.instanceColor.needsUpdate = true; sd.live = 1;
+}
+function ring(x, y, z, col, ms = 400, sc = 1) { const r = ringPool.find(q => !q.m.visible) || ringPool[0]; r.m.visible = true; r.m.material.color.set(col); r.m.position.set(x, y, z); r.t0 = now(); r.ms = ms; r.sc = sc; }
+const WG = { b: new THREE.ConeGeometry(.16, .5, 6), h: new THREE.SphereGeometry(.1, 8, 6) };
+function warriors(x, z, att) {
+  const mk = c => { const g = new THREE.Group(), m = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: .9, depthWrite: false }); const b = new THREE.Mesh(WG.b, m), h = new THREE.Mesh(WG.h, m); b.position.y = .25; h.position.y = .6; g.add(b, h); g.userData.m = m; scene.add(g); return g; };
+  const A = mk(att === 'PLAYER' ? '#60A5FA' : '#F87171'), D = mk(att === 'PLAYER' ? '#F87171' : '#60A5FA');
+  tween(280, p => { const e = sm(p); A.position.set(x - lerp(.9, .1, e), .9 - .25, z); D.position.set(x + lerp(.9, .1, e), .9 - .25, z); A.rotation.z = -.5 * e; D.rotation.z = .5 * e; D.userData.m.opacity = p < .5 ? .9 : (1 - p) * 1.8; if (p >= 1) { for (const g of [A, D]) { scene.remove(g); g.userData.m.dispose(); } } });
+}
+function impact(a, slot) { const cv = CV[slot]; ring(cv.x, .1, cv.z, a === 'PLAYER' ? PALETTE.PLAYER_BLUE_CORE : PALETTE.ENEMY_CRIMSON_CORE, 500, 1.4); emit(cv.x, .35, cv.z, PALETTE.GOLD_ROYAL_HIGHLIGHT, 14, { s: 2.6, u0: 1, u1: 2.8 }); warriors(cv.x, cv.z, a); SFX.hit(); }
+
+/* ============================ card visuals ============================ */
+function mkObj(card, up, p) {
+  const g = new THREE.Group(), body = new THREE.Mesh(BOX, [EDGE, EDGE, faceMat(card), backM, EDGE, EDGE]); g.add(body); g.rotation.z = up ? 0 : Math.PI; if (p) g.position.copy(p); scene.add(g);
+  const o = { g, c: card, body, t: null, fly: false, halo: null }; body.userData = { o, hand: true }; V.set(card.id, o); return o;
+}
+function getHalo(o) { if (o.halo) return o.halo; const sp = new THREE.Group(); for (let k = 0; k < 4; k++) { const m = new THREE.Mesh(HALO[k], HALO.gold); m.rotation.x = -Math.PI / 2; sp.add(m); } sp.position.y = -.02; sp.scale.setScalar(1.3); sp.visible = false; o.g.add(sp); return o.halo = sp; }
+const stackTop = s => .065 + CV[s].stack.length * .028;
+const grimTop = () => Math.max(.03, M.grimoire.length * .012);
+const ashTop = () => Math.max(.03, M.ashPyre.length * .012);
+function updatePiles() {
+  const g = Math.max(.002, M.grimoire.length * .012), a = Math.max(.002, M.ashPyre.length * .012);
+  CV.grim.scale.y = g; CV.grim.position.y = g / 2; CV.ash.scale.y = a; CV.ash.position.y = a / 2; pyreLight.intensity = M.ashPyre.length ? 1.6 : 0;
+}
+function layout(a) {
+  const arr = H[a], n = arr.length, step = a === 'PLAYER' ? Math.min(1.34, 12.6 / Math.max(n, 1)) : Math.min(1.34, 7.2 / Math.max(n, 1)), z0 = a === 'PLAYER' ? ARENA_CONFIG.PLAYER_HAND_Z : ARENA_CONFIG.ENEMY_HAND_Z;
+  const pScale = a === 'PLAYER' ? Math.min(1, (step - .06) / CW) : .78; // player cards shrink slightly with big hands so they never overlap
+  const spSel = a === 'PLAYER' && M.selectedCardIds.some(id => V.get(id) && V.get(id).c.suit === 'SPADES');
+  arr.forEach((o, i) => {
+    const sel = a === 'PLAYER' && M.selectedCardIds.includes(o.c.id), spUp = spSel && o.c.suit === 'SPADES' && !sel;
+    o.t = { x: (i - (n - 1) / 2) * step, y: a === 'PLAYER' ? (sel ? .86 : spUp ? .78 : .5 + i * .004) : (sel ? .62 : spUp ? .54 : .26 + i * .004), z: z0 + (sel ? -.36 : spUp ? -.26 : 0), rx: a === 'PLAYER' ? .5 : .25, rz: (a === 'PLAYER' || revealed) ? 0 : Math.PI, s: pScale };
+    o.sel = sel; o.spUp = spUp;
+  });
+}
+async function pull(a, card, delay = 0, fromAsh = false) {
+  const px = fromAsh ? ARENA_CONFIG.ASH_PYRE_POS.x : ARENA_CONFIG.GRIMOIRE_POS.x, py = (fromAsh ? ashTop() : grimTop()) + .03, up = a === 'PLAYER';
+  const o = mkObj(card, fromAsh, new THREE.Vector3(px, py, 0)); H[a].push(o); layout(a); o.fly = true; const s = o.g.position.clone(), sz = o.g.rotation.z;
+  await tween(420, p => { const e = sm(p), t = o.t; o.g.position.set(lerp(s.x, t.x, e), lerp(s.y, t.y, e) + Math.sin(p * Math.PI) * .9, lerp(s.z, t.z, e)); o.g.rotation.x = lerp(0, t.rx, e); o.g.rotation.z = up ? lerp(sz, 0, e) : lerp(sz, Math.PI, e); }, delay);
+  o.fly = false; SFX.flip();
+}
+async function draw(a, n, fromAsh = false) {
+  const cards = []; for (let i = 0; i < n && M.grimoire.length; i++) cards.push(M.grimoire.pop()); hand(a).push(...cards); updatePiles();
+  await Promise.all(cards.map((c, i) => pull(a, c, i * 85))); hud();
+}
+async function dealCastle(i, delay) {
+  const card = M.castles[i].cardStack[0], cv = CV[i], o = mkObj(card, false, new THREE.Vector3(ARENA_CONFIG.GRIMOIRE_POS.x, grimTop(), 0)); o.body.userData.hand = false; o.body.userData.slot = i; o.fly = true;
+  const s = o.g.position.clone(), ty = .065 + .012;
+  await tween(420, p => { const e = sm(p); o.g.position.set(lerp(s.x, cv.x, e), lerp(s.y, ty, e) + Math.sin(p * Math.PI) * .9, lerp(s.z, cv.z, e)); }, delay);
+  o.g.position.set(cv.x, ty, cv.z); cv.stack.push(o); o.fly = false;
+}
+async function flipCastle(slot) {
+  const o = CV[slot].stack[0], base = o.g.position.y, cv = CV[slot]; o.fly = true; SFX.flip(); ring(cv.x, .1, cv.z, PALETTE.GOLD_ROYAL_HIGHLIGHT, 400);
+  await tween(480, p => { o.g.position.y = base + Math.sin(p * Math.PI) * 1.1; o.g.rotation.x = Math.sin(p * Math.PI) * .25; o.g.rotation.z = Math.PI * (1 - sm(c01((p - .25) / .5))); });
+  o.g.rotation.set(0, 0, 0); o.g.position.y = base; M.castles[slot].discovered = true; frames();
+}
+async function conquer(a, objs, slot) {
+  const cv = CV[slot], base = stackTop(slot), st = objs.map(o => ({ o, p: o.g.position.clone(), rx: o.g.rotation.x, rz: o.g.rotation.z }));
+  objs.forEach(o => { o.g.scale.set(1, 1, 1); if (o.halo) o.halo.visible = false; o.fly = true; o.t = null; o.body.userData.hand = false; o.body.userData.slot = slot; }); let hit = false;
+  await tween(680, p => {
+    st.forEach((s, i) => { const ty = base + i * .028 + .012, g = s.o.g;
+      if (p < .65) { const q = sm(p / .65); g.position.set(lerp(s.p.x, cv.x, q), lerp(s.p.y, ty, q) + Math.sin(q * Math.PI) * 1.85, lerp(s.p.z, cv.z, q)); g.rotation.x = lerp(s.rx, 0, q) - .35 * Math.sin(q * Math.PI); g.rotation.z = lerp(s.rz, 0, q); }
+      else { g.position.set(cv.x, ty + Math.sin((p - .65) / .35 * Math.PI) * .08, cv.z); g.rotation.x = 0; g.rotation.z = 0; } });
+    if (p >= .65 && !hit) { hit = true; impact(a, slot); }
+  });
+  objs.forEach((o, i) => { o.g.rotation.set(0, (Math.random() - .5) * .12, 0); o.g.position.set(cv.x, base + i * .028 + .012, cv.z); o.fly = false; cv.stack.push(o); });
+}
+async function bounce(cards, slot) {
+  const cv = CV[slot], os = cards.map(c => V.get(c.id)), st = os.map(o => o.g.position.clone()); os.forEach(o => o.fly = true); let rg = false;
+  const tgt = i => ({ x: cv.x + (os.length > 1 ? (i ? .3 : -.3) : 0), y: 1.0, z: cv.z + .9 });
+  await tween(540, p => {
+    os.forEach((o, i) => { const t = tgt(i), s = st[i];
+      if (p < .35) { const q = sm(p / .35); o.g.position.set(lerp(s.x, t.x, q), lerp(s.y, t.y, q), lerp(s.z, t.z, q)); }
+      else if (p < .7) o.g.position.set(t.x + Math.sin((p - .35) * .54 * 65) * .22, t.y, t.z);
+      else { const q = sm((p - .7) / .3), h = o.t || { x: s.x, y: s.y, z: s.z }; o.g.position.set(lerp(t.x, h.x, q), lerp(t.y, h.y, q), lerp(t.z, h.z, q)); } });
+    if (p >= .35 && !rg) { rg = true; ring(cv.x, .1, cv.z, PALETTE.ALERT_DANGER_RED, 400); SFX.rej(); }
+  });
+  os.forEach(o => o.fly = false);
+}
+async function burnAnim(a, card) {
+  const o = V.get(card.id); if (o.halo) o.halo.visible = false; H[a] = H[a].filter(x => x !== o); layout(a); o.fly = true;
+  const s = o.g.position.clone(), rx = o.g.rotation.x, rz = o.g.rotation.z, tx = ARENA_CONFIG.ASH_PYRE_POS.x, ty = ashTop() + .05, AX = 0, AY = 3.3, AZ = .5;
+  // private material copies so scorching never touches the shared card faces
+  const mats = o.body.material.map(m => { const c = m.clone(); c.transparent = true; return c; }); o.body.material = mats;
+  const c0 = mats.map(m => m.color.clone()), e0 = mats.map(m => m.emissive.clone()), i0 = mats.map(m => m.emissiveIntensity), charC = new THREE.Color(0x1b0e09), fireC = new THREE.Color(PALETTE.PYRE_EMBER_ORANGE);
+  const scorch = k => mats.forEach((m, i) => { m.color.copy(c0[i]).lerp(charC, k * .9); m.emissive.copy(e0[i]).lerp(fireC, Math.min(1, k * 2.5)); m.emissiveIntensity = lerp(i0[i], .85 + Math.random() * .45, k); });
+  const FIRE = ['#F97316', '#FBBF24', '#EF4444', '#FDE68A'], flames = (g, sc, n, op) => { const p = g.position; for (let k = 0; k < n; k++) emit(p.x + (Math.random() - .5) * 1.1 * sc, p.y + (Math.random() - .3) * .3, p.z + (Math.random() - .5) * 1.5 * sc, FIRE[(Math.random() * FIRE.length) | 0], 1, op); };
+  SFX.whoosh();
+  // 1 - the card rises toward the viewer and grows
+  await tween(560, p => { const e = 1 - Math.pow(1 - p, 3), g = o.g; g.position.set(lerp(s.x, AX, e), lerp(s.y, AY, e) + Math.sin(p * Math.PI) * .35, lerp(s.z, AZ, e)); g.rotation.x = lerp(rx, .55, e); g.rotation.z = lerp(rz, 0, sm(c01(p * 1.3))); g.rotation.y = Math.sin(p * Math.PI * 2) * .22 * (1 - p); g.scale.setScalar(lerp(1, 1.9, e)); });
+  // 2 - it ignites: shakes, chars and throws flames
+  ring(AX, .1, AZ, PALETTE.PYRE_EMBER_ORANGE, 700, 2.4); SFX.ignite();
+  await tween(620, p => { const g = o.g; g.position.set(AX + Math.sin(now() * .06) * .05 * p, AY + Math.sin(p * Math.PI * 3) * .07, AZ); g.rotation.y = 0; g.rotation.z = Math.sin(now() * .045) * .05 * p; g.scale.setScalar(1.9 + .15 * p + Math.sin(now() * .03) * .02); scorch(p); flames(g, 1.9, 3, { s: .5, u0: .8, u1: 2.4, g: -1.5, l: .7 }); });
+  // 3 - the burning card falls, tumbling and crumbling, into the graveyard
+  await tween(640, p => { const g = o.g, e = sm(p); g.position.set(lerp(AX, tx, e), lerp(AY, ty, p * p) + Math.sin(p * Math.PI) * .45, lerp(AZ, 0, e)); g.rotation.x = lerp(.55, 0, e); g.rotation.z = lerp(0, Math.PI * 1.4, e); g.scale.setScalar(lerp(2.05, .95, e)); scorch(1); const f = 1 - sm(c01((p - .45) / .55)) * .85; mats.forEach(m => m.opacity = f); flames(g, lerp(2, 1, p), 3, { s: .5, u0: .6, u1: 1.8, g: 2, l: .6 }); });
+  emit(tx, ty, 0, PALETTE.PYRE_EMBER_ORANGE, 26, { s: 2.2, u0: 1.4, u1: 4, g: 6, l: 1 }); emit(tx, ty, 0, '#FBBF24', 14, { s: 1.4, u0: 2, u1: 4.5, g: 6, l: .9 }); ring(tx, .1, 0, PALETTE.PYRE_EMBER_ORANGE, 700, 1.7); SFX.burn(); SFX.thud();
+  scene.remove(o.g); V.delete(card.id); mats.forEach(m => m.dispose()); updatePiles();
+  tween(650, q => { pyreLight.intensity = (M && M.ashPyre.length ? 1.6 : 0) + 5 * (1 - q); });
+}
+const pawnG = (() => { const pts = [[0, 0], [.22, 0], [.25, .04], [.14, .2], [.12, .32], [.2, .36], [.1, .44], [0, .46]].map(p => new THREE.Vector2(p[0], p[1])); return { l: new THREE.LatheGeometry(pts, 14), c: new THREE.ConeGeometry(.13, .17, 5), s: new THREE.SphereGeometry(.045, 8, 6) }; })();
+function spawnPawn(slot, a) {
+  removePawn(slot, true); const col = a === 'PLAYER' ? PALETTE.PLAYER_BLUE_GLOW : PALETTE.ENEMY_CRIMSON_GLOW, m = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: .55, metalness: .5, roughness: .3 });
+  const g = new THREE.Group(), l = new THREE.Mesh(pawnG.l, m), c = new THREE.Mesh(pawnG.c, new THREE.MeshStandardMaterial({ color: PALETTE.GOLD_ROYAL_HIGHLIGHT, emissive: PALETTE.GOLD_ROYAL_PRIMARY, emissiveIntensity: .7, metalness: .8, roughness: .25 })); c.position.y = .52; g.add(l, c); g.scale.setScalar(.01); scene.add(g);
+  CV[slot].pawn = { g, m, born: now() }; M.castles[slot].owner = a; frames(); ring(CV[slot].x + .55, .1, CV[slot].z - .55, col, 400, .5);
+}
+function removePawn(slot, quiet) { const p = CV[slot].pawn; if (!p) return; scene.remove(p.g); p.m.dispose(); CV[slot].pawn = null; if (!quiet) M.castles[slot].owner = null; frames(); }
+function frames() {
+  if (!M) return; CV.forEach((cv, i) => { const c = M.castles[i]; let col = c.discovered ? (c.owner === 'PLAYER' ? PALETTE.PLAYER_BLUE_GLOW : c.owner === 'ENEMY' ? PALETTE.ENEMY_CRIMSON_GLOW : PALETTE.SLOT_UNCLAIMED) : '#6b5a2a'; let pad = 0x101c30;
+    if (mate && mate.includes(i)) { col = PALETTE.CHECKMATE_EMERALD; pad = 0x052E16; } cv.frame.material.color.set(col); cv.frame.material.toneMapped = !(mate && mate.includes(i)); cv.frame.material.opacity = 1; cv.frame.scale.setScalar(1); cv.pad.material.color.set(pad);
+    const oc = c.owner === 'PLAYER' ? '#38bdf8' : c.owner === 'ENEMY' ? '#f43f5e' : '#FBBF24'; setSlotLabel(cv.lab, stag(i), '', oc); });
+}
+
+/* ============================ rules engine ============================ */
+function claim(a, slot) {
+  const c = M.castles[slot]; if (c.owner === a) return 'REINFORCE';
+  if (c.owner) removePawn(slot);
+  if (cntC(a) < ARENA_CONFIG.PAWN_CAP_PER_PLAYER) { spawnPawn(slot, a); M.lastClaimed = slot; return 'CLAIMED'; }
+  M.pendingConqueredSlot = slot; return 'REASSIGN';
+}
+async function askVacate(a, slot) {
+  let v = null;
+  if (a === 'ENEMY') { await sleep(450); const sim = M.castles.map(c => c.owner); sim[slot] = 'ENEMY'; v = pickVac(sim, slot); }
+  else {
+    const prev = fsm; setFsm('PAWN_REASSIGN'); $('#kprt').textContent = `Castle ${stag(slot)} conquered — tap one of YOUR castles to vacate, or decline.`; $('#kpr').hidden = false; hud();
+    v = await new Promise(res => reassign = { res, slot }); reassign = null; $('#kpr').hidden = true; setFsm(prev);
+  }
+  if (v !== null && v !== undefined) { removePawn(v); spawnPawn(slot, a); M.lastClaimed = slot; log(`${a} vacated ${cn(v)} for ${cn(slot)}`); } else log(`${a} declined claim on ${cn(slot)}`);
+  M.pendingConqueredSlot = null; hud();
+}
+const CREW_MIN = 3; // minimum crew (hand): 2 + 1
+async function refillCrew(a) { const need = CREW_MIN - hand(a).length; if (need > 0 && M.grimoire.length > 0) await draw(a, Math.min(need, M.grimoire.length)); }
+async function triggers(a, played) {
+  const h = hand(a);
+  for (const c of played) {
+    if (c.suit === 'HEARTS') await draw(a, 2);
+    if (c.rank === 11 && M.ashPyre.length) { shuffle(M.ashPyre); const r = M.ashPyre.shift(); if (r) { h.push(r); updatePiles(); await pull(a, r, 0, true); } }
+  }
+  await refillCrew(a);
+}
+async function doAttack(a, slot, cards) {
+  const cs = M.castles[slot], r = resolveCombat(cards, cs.cardStack.at(-1));
+  if (!r.valid) { await bounce(cards, slot); M.selectedCardIds = []; layout(a); hud(); toast(REASON[r.reason] || 'Invalid attack'); return false; }
+  const objs = r.orderedStack.map(c => V.get(c.id)), h = hand(a);
+  cards.forEach(c => h.splice(h.indexOf(c), 1)); H[a] = H[a].filter(o => !objs.includes(o)); M.selectedCardIds = []; layout(a);
+  cs.cardStack.push(...r.orderedStack); await conquer(a, objs, slot);
+  log(`${a} played ${r.orderedStack.map(c => c.label + (SYM[c.suit] || '')).join('+')} on ${cn(slot)} (${r.reason})`);
+  const res = claim(a, slot); if (res === 'REASSIGN') await askVacate(a, slot);
+  await triggers(a, cards); M.turnActionCommitted = true; layout('PLAYER'); layout('ENEMY'); frames(); hud(); return true;
+}
+async function doBurn(a, card) {
+  const h = hand(a); h.splice(h.indexOf(card), 1); M.ashPyre.push(card); M.selectedCardIds = []; log(`${a} burned ${card.label}${SYM[card.suit] || ''}`);
+  await burnAnim(a, card); await refillCrew(a); M.turnActionCommitted = true; layout(a); hud();
+}
+async function doUnravel(slot) {
+  M.unravelUsedThisTurn = true; M.selectedCardIds = []; layout('PLAYER'); busy = true; hud(); await flipCastle(slot); const c = M.castles[slot].cardStack[0];
+  log(`${M.activeActor} unraveled ${cn(slot)}: ${c.label}${SYM[c.suit] || ''}`); busy = false; hud(); maybeAutoEnd();
+}
+function startTurn() {
+  M.turnRemainingMs = ARENA_CONFIG.TURN_DURATION_MS; M.unravelUsedThisTurn = false; M.turnActionCommitted = false; M.selectedCardIds = []; M.lastClaimed = null; timeoutRun = false; setFsm('DUEL_TURN'); running = true;
+  log(`— Turn ${M.turnNumber}: ${M.activeActor} —`); const G = gid, a = M.activeActor;
+  (async () => { if (hand(a).length < CREW_MIN && M.grimoire.length > 0) { busy = true; await refillCrew(a); busy = false; } if (G !== gid) return; layout('PLAYER'); layout('ENEMY'); hud(); if (a === 'ENEMY') botTurn(G); else maybeAutoEnd(); })();
+}
+async function commitTurn() {
+  if (fsm !== 'DUEL_TURN' || busy) return; busy = true; M.selectedCardIds = []; layout('PLAYER'); const a = M.activeActor, line = findLine(M.castles, a); busy = false;
+  if (line) return enterCheck(a, line);
+  if (M.grimoire.length === 0) return endMatch('GRIMOIRE');
+  M.activeActor = opp(a); M.turnNumber++; startTurn();
+}
+function enterCheck(att, line, slot) {
+  const def = opp(att), tgt = slot != null && line.includes(slot) ? slot : (line.includes(M.lastClaimed) ? M.lastClaimed : line[0]);
+  M.checkContext = { attacker: att, defender: def, winningLine: line, targetFourthSlot: tgt, defenseRemainingMs: ARENA_CONFIG.CHECK_DEFENSE_DURATION_MS }; M.activeActor = def; M.selectedCardIds = []; setFsm('CHECK_DEFENSE'); running = true;
+  log(`CHECK by ${att} on line ${line.map(i => i + 1).join('-')} — ${cn(tgt)} must be retaken`); SFX.chk(); $('#kvig').className = 'chk'; $('#kchkt').textContent = def === 'PLAYER' ? `⚠️ CHECK! Defend Castle ${stag(tgt)} in 1 Move or Lose!` : `⚔️ CHECK! The Regent must retake Castle ${stag(tgt)}`; layout('PLAYER'); layout('ENEMY'); hud();
+  const G = gid; if (def === 'ENEMY') botDefend(G); else setTimeout(() => { if (G === gid && fsm === 'CHECK_DEFENSE' && M.checkContext && M.checkContext.defender === 'PLAYER' && !legalExists('PLAYER', tgt)) { toast('No legal defense available'); setTimeout(() => { if (G === gid && fsm === 'CHECK_DEFENSE') checkmate(); }, 1400); } }, 900);
+}
+const legalExists = (a, slot) => plays(hand(a)).some(p => resolveCombat(p, M.castles[slot].cardStack.at(-1)).valid);
+async function afterDefense() {
+  const cc = M.checkContext, d = cc.defender, line = findLine(M.castles, d);
+  if (line) return enterCheck(d, line, cc.targetFourthSlot);
+  M.checkContext = null; $('#kvig').className = ''; frames(); log(`${d} broke the Check`);
+  if (M.grimoire.length === 0) return endMatch('GRIMOIRE');
+  M.activeActor = cc.attacker; M.turnNumber++; startTurn();
+}
+function checkmate() { const cc = M.checkContext; endMatch('CHECKMATE', cc.attacker, cc.winningLine); }
+async function endMatch(reason, winner, line) {
+  if (fsm === 'MATCH_END') return; running = false; setFsm('MATCH_END'); busy = true; M.selectedCardIds = []; $('#kchk').hidden = true; $('#kpr').hidden = true; if (reassign) reassign.res(null);
+  if (reason === 'GRIMOIRE') { const p = cntC('PLAYER'), e = cntC('ENEMY'); winner = p > e ? 'PLAYER' : e > p ? 'ENEMY' : 'TIE'; reason = winner === 'TIE' ? 'GRIMOIRE_TIE' : 'GRIMOIRE_MAJORITY'; line = null; }
+  revealed = true; layout('ENEMY'); layout('PLAYER'); if (reason === 'CHECKMATE') { mate = line; (winner === 'PLAYER' ? SFX.win : SFX.lose)(); $('#kvig').className = winner === 'PLAYER' ? 'mate' : 'lose'; } else $('#kvig').className = winner === 'ENEMY' ? 'lose' : ''; frames();
+  const s = computeSettlement(M.castles, AR, reason, winner, line); GS().creditVaults(s.totalRoundCoinsPlayer, s.totalRoundCoinsEnemy); const v = GS().vaults; s.updatedPlayerVault = v.player; s.updatedEnemyVault = v.enemy;
+  K.vaults = { playerVault: v.player, enemyVault: v.enemy }; M.settlement = s; log(`MATCH END: ${reason} → ${winner}`); hud(); const G = gid; await sleep(2300); if (G === gid) settleModal(s);
+}
+
+/* ============================ DuelBot (public info only) ============================ */
+const plays = h => { const r = h.map(c => [c]); for (let i = 0; i < h.length; i++) for (let j = i + 1; j < h.length; j++) if (h[i].suit === 'SPADES' && h[j].suit === 'SPADES') r.push([h[i], h[j]]); return r; };
+function pickVac(sim, keep) { let best = null, bs = 1e9; sim.forEach((o, i) => { if (o !== 'ENEMY' || i === keep) return; const sc = LINES.filter(l => l.includes(i) && !l.some(k => sim[k] === 'PLAYER')).length * 100 + M.castles[i].coinPot; if (sc < bs) { bs = sc; best = i; } }); return best; }
+function scorePlay(cards, slot, defending) {
+  const c = M.castles[slot]; if (!c.discovered) return null; const r = resolveCombat(cards, c.cardStack.at(-1)); if (!r.valid) return null;
+  const top = r.orderedStack.at(-1), sim = M.castles.map(x => x.owner), own = sim[slot] === 'ENEMY', steal = sim[slot] === 'PLAYER'; if (own && !defending) return null;
+  const threat = steal && LINES.some(l => l.includes(slot) && l.filter(i => M.castles[i].owner === 'PLAYER').length >= 3);
+  sim[slot] = 'ENEMY'; if (sim.filter(o => o === 'ENEMY').length > 4) { const v = pickVac(sim, slot); if (v !== null) sim[v] = null; }
+  let s = 0; if (LINES.some(l => l.every(i => sim[i] === 'ENEMY'))) s += (defending ? 10000 : 5000) + top.basePower * .5;
+  if (threat) s += 1500; s += c.coinPot * 12; s += steal ? 35 : 30;
+  for (const x of cards) { if (x.suit === 'HEARTS') s += 14; if (x.rank === 11 && M.ashPyre.length) s += 10; s -= x.basePower * .01; }
+  if (r.reason.startsWith('ACE') || r.reason === 'SPADES_EVEN_COUPLE') s += 25; return s;
+}
+function bestPlay(defending) {
+  let best = null, bs = 0; const h = M.enemyHand, slots = defending ? [M.checkContext.targetFourthSlot] : M.castles.map((_, i) => i);
+  for (const p of plays(h)) for (const sl of slots) { const s = scorePlay(p, sl, defending); if (s !== null && (best === null || s > bs)) { best = { p, sl }; bs = s; } }
+  return best;
+}
+const bsleep = () => sleep(750 + Math.random() * 350);
+async function botPlay(b) {
+  busy = true; hud(); M.selectedCardIds = b.p.map(c => c.id); layout('ENEMY'); await sleep(250); const ok = await doAttack('ENEMY', b.sl, b.p); busy = false; hud(); return ok;
+}
+async function botTurn(G) {
+  await bsleep(); const ok = () => G === gid && fsm === 'DUEL_TURN' && M.activeActor === 'ENEMY';
+  if (!ok()) return; let b = bestPlay(false);
+  if (!b && !M.unravelUsedThisTurn) {
+    const un = M.castles.filter(c => !c.discovered).map(c => c.index);
+    if (un.length) { const pri = [5, 6, 9, 10, 0, 3, 12, 15], pick = pri.find(i => un.includes(i)) ?? un[0]; busy = true; await doUnravel(pick); if (!ok()) return; await bsleep(); b = bestPlay(false); }
+  }
+  if (b) { await botPlay(b); if (!ok()) return; await bsleep(); }
+  else if (M.enemyHand.length) { const h = [...M.enemyHand].sort((x, y) => (x.rank === 1) - (y.rank === 1) || x.basePower - y.basePower); busy = true; await doBurn('ENEMY', h[0]); busy = false; if (!ok()) return; await bsleep(); }
+  if (ok()) commitTurn();
+}
+async function botDefend(G) {
+  await bsleep(); if (G !== gid || fsm !== 'CHECK_DEFENSE') return; const b = bestPlay(true);
+  if (!b) { toast('Iron Regent cannot defend!'); await sleep(900); if (G === gid && fsm === 'CHECK_DEFENSE') checkmate(); return; }
+  const ok = await botPlay(b); if (G !== gid) return; if (ok) { await sleep(500); afterDefense(); } else checkmate();
+}
+
+/* ============================ input & timers ============================ */
+const canEnd = () => fsm === 'DUEL_TURN' && M.activeActor === 'PLAYER' && !busy;
+// Nothing left to play: action already used (unravel is only allowed before it), or no cards and nothing to unravel
+function nothingLeft() {
+  if (!M || fsm !== 'DUEL_TURN' || M.activeActor !== 'PLAYER') return false;
+  const canUnravel = !M.unravelUsedThisTurn && !M.turnActionCommitted && M.castles.some(c => !c.discovered);
+  const canAct = !M.turnActionCommitted && hand('PLAYER').length > 0;
+  return !canUnravel && !canAct;
+}
+let autoEndTok = 0;
+function maybeAutoEnd() {
+  if (!canEnd() || !nothingLeft()) return;
+  const G = gid, n = M.turnNumber, tok = ++autoEndTok;
+  setTimeout(() => { if (G !== gid || tok !== autoEndTok || !M || n !== M.turnNumber || !canEnd() || !nothingLeft()) return; toast('Nothing left to play — turn ended'); commitTurn(); }, 900);
+}
+function toggleSel(id) {
+  const c = V.get(id).c, s = M.selectedCardIds, i = s.indexOf(id); SFX.pick();
+  if (i >= 0) s.splice(i, 1); else if (c.suit === 'SPADES' && s.length === 1 && V.get(s[0]).c.suit === 'SPADES') s.push(id); else s.splice(0, s.length, id);
+  layout('PLAYER'); hud();
+}
+async function humanAttack(slot) {
+  const cards = M.selectedCardIds.map(id => V.get(id).c); busy = true; hud(); const ok = await doAttack('PLAYER', slot, cards); busy = false; hud();
+  if (ok && fsm === 'CHECK_DEFENSE') afterDefense(); else if (ok) maybeAutoEnd();
+}
+async function humanBurn() { if (!canEnd() || M.turnActionCommitted || M.selectedCardIds.length !== 1) return; busy = true; hud(); await doBurn('PLAYER', V.get(M.selectedCardIds[0]).c); busy = false; hud(); maybeAutoEnd(); }
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function onPointer(e) {
+  if (!M || !$('#kmod').hidden) return; const r = e.target.getBoundingClientRect(); ndc.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1); ray.setFromCamera(ndc, cam);
+  const list = [...CV.map(c => c.pad), ...CV.flatMap(c => c.stack.map(o => o.body)), ...H.PLAYER.map(o => o.body)], hit = ray.intersectObjects(list, false)[0]; if (!hit) { $('#kdraw').hidden = true; return; }
+  const u = hit.object.userData, slot = u.slot !== undefined ? u.slot : (u.o && !u.hand ? u.slot : undefined);
+  if (fsm === 'PAWN_REASSIGN') { if (slot !== undefined && reassign && M.castles[slot].owner === 'PLAYER' && slot !== reassign.slot) reassign.res(slot); return; }
+  if (busy || M.activeActor !== 'PLAYER' || !(fsm === 'DUEL_TURN' || fsm === 'CHECK_DEFENSE')) { if (slot !== undefined) inspect(slot); return; }
+  if (u.hand && u.o) { if (!M.turnActionCommitted || fsm === 'CHECK_DEFENSE') toggleSel(u.o.c.id); return; }
+  if (slot === undefined) return; const c = M.castles[slot], has = M.selectedCardIds.length > 0;
+  if (fsm === 'CHECK_DEFENSE') { if (has) { if (slot === M.checkContext.targetFourthSlot) humanAttack(slot); else toast(`Retake Castle ${stag(M.checkContext.targetFourthSlot)} to break Check`); } else inspect(slot); return; }
+  if (!c.discovered) { if (!M.unravelUsedThisTurn && !M.turnActionCommitted) doUnravel(slot); else inspect(slot); return; }
+  if (has && !M.turnActionCommitted) humanAttack(slot); else inspect(slot);
+}
+function inspect(slot) {
+  const c = M.castles[slot], d = $('#kdraw'), chip = (k, top) => `<span class="chip${top ? ' top' : ''}" style="color:${INK[k.suit]};${k.suit === 'JOKER' ? 'background:#1E1B4B' : ''}">${k.label}${SYM[k.suit] || ''}</span>`;
+  const body = c.discovered ? c.cardStack.map((k, i) => chip(k, i === c.cardStack.length - 1)).join('') : '<span style="color:#9aa7c7;font-size:12px">Guardian unrevealed — Unravel to see it.</span>';
+  d.innerHTML = `<h4>${stag(slot)}</h4><div style="font-size:13px;margin-bottom:6px">Price: <b style="color:#FBBF24">${fmt(c.coinPot)} 💰</b> <span style="font-size:11px;color:#9aa7c7">(<span style="color:#38bdf8">You ${fmt(AR.playerBids[slot])}</span> · <span style="color:#f43f5e">AI ${fmt(AR.enemyBids[slot])}</span>)</span></div><div style="font-size:13px;margin-bottom:6px">Pawn: <b style="color:${c.owner === 'PLAYER' ? '#38bdf8' : c.owner === 'ENEMY' ? '#f43f5e' : '#9aa7c7'}">${c.owner || 'None'}</b></div><div style="font-size:11px;color:#9aa7c7">Stack (bottom → top)</div><div>${body}</div>`; d.hidden = false;
+}
+function toast(t) { const e = $('#ktoast'); e.textContent = t; e.classList.add('s'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('s'), 2000); }
+function hud() {
+  if (!M) return; const me = M.activeActor === 'PLAYER'; $('#kturn').textContent = 'Turn #' + M.turnNumber; const b = $('#kact'); b.textContent = me ? 'YOUR TURN' : 'ENEMY TURN'; b.className = 'bdg ' + (me ? 'p' : 'e'); $('#kunr').textContent = 'Unravel ' + (M.unravelUsedThisTurn ? 'Used' : '1/1');
+  $('#kvault').textContent = 'Vault: ' + fmt(GS().vaults.player) + ' 💰';
+  $('#kst').innerHTML = `<span class="pl">You: ${cntC('PLAYER')}/4 ♜</span> · <span class="en">Enemy: ${cntC('ENEMY')}/4 ♜</span><br>Grimoire: ${M.grimoire.length} · Graveyard: ${M.ashPyre.length}`;
+  const pt = canEnd(), cd = fsm === 'CHECK_DEFENSE';
+  $('#kburn').disabled = !(pt && !M.turnActionCommitted && M.selectedCardIds.length === 1); $('#kend').disabled = !pt; $('#kend').classList.toggle('glow', pt && (M.turnActionCommitted || M.selectedCardIds.length === 2));
+  $('#kchk').hidden = !cd; $('#kconc').disabled = busy; $('#kconc').style.display = me ? '' : 'none';
+  let h = ''; if (fsm === 'MATCH_END') h = 'Match over'; else if (fsm === 'PAWN_REASSIGN') h = 'Choose a Castle to vacate'; else if (!me) h = 'The Iron Regent is thinking…'; else if (cd) h = 'Select a card (or Spades couple), then tap the Check Castle'; else if (M.turnActionCommitted) h = 'Action complete — ending your turn…'; else if (M.selectedCardIds.length) h = 'Tap a revealed Castle to attack · 🔥 to burn'; else h = 'Select a card · tap a face-down Castle to Unravel (once per turn)';
+  updatePiles();
+}
+function modal(html) { const m = $('#kmod'); m.innerHTML = `<div class="mc">${html}</div>`; m.hidden = false; m.onclick = e => { if (e.target === m) m.hidden = true; }; const c = m.querySelector('[data-close]'); if (c) c.onclick = () => m.hidden = true; }
+function rulesModal() { modal(`<h2 class="d">RULES</h2><div class="sub">4×4 Card Duel</div><ul><li><b>Unravel</b> one Castle per turn, then attack or burn once, then ✅ End Turn.</li><li><b>Power:</b> ♠ &lt; ♥ &lt; ♣ &lt; ♦, then rank. Joker beats all; only a Joker or J/Q/K beats a Joker.</li><li><b>Ace</b> beats any Queen and the same-suit King.</li><li><b>Spades couple:</b> two ♠ with an even sum (J=11, Q=12, K=14) strictly above the defender.</li><li>♥ draws 2 · J recovers a Graveyard card · Crew never drops below 3 (2+1): the Grimoire refills it at once.</li><li>Max 4 Pawns. Four in a row = <b>CHECK</b>: the rival has one move to retake the 4th Castle.</li><li>Grimoire empty: most Pawns wins.</li></ul><button class="cta" data-close>Back to the Duel</button>`); }
+function chronicleModal() { modal(`<h2 class="d">CHRONICLE</h2><div class="sub">Latest events</div><ul style="list-style:none;padding:0;font-size:12px">${K.chronicle.slice(-40).reverse().map(e => `<li style="padding:3px 0;border-bottom:1px solid rgba(148,178,255,.1)">${e.text}</li>`).join('')}</ul><button class="cta" data-close>Close</button>`); }
+let resSkip = false, fxTimer = null, boardRevealed = false;
+const wait = ms => resSkip ? Promise.resolve() : sleep(ms);
+function countTo(el, to, ms, from = 0, pre = '', post = ' 💰') {
+  return new Promise(res => {
+    if (!el) return res();
+    if (resSkip || ms <= 0) { el.textContent = pre + fmt(to) + post; return res(); }
+    const t0 = now();
+    (function f() { const p = c01((now() - t0) / ms), v = from + (to - from) * sm(p); el.textContent = pre + fmt(Math.round(v * 2) / 2) + post; if (p < 1 && !resSkip) requestAnimationFrame(f); else { el.textContent = pre + fmt(to) + post; res(); } })();
+  });
+}
+function resFx(kind) {
+  const box = $('#kfx'); if (!box) return; box.innerHTML = '';
+  const n = kind === 'win' ? 80 : kind === 'loss' ? 46 : 30, cols = kind === 'win' ? ['#FBBF24', '#eab308', '#38bdf8', '#f8fafc', '#10B981', '#f43f5e'] : kind === 'loss' ? ['#f43f5e', '#7f1d1d', '#475569', '#1e293b'] : ['#FBBF24', '#cbd5e1'];
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement('i'), sz = 6 + Math.random() * 8; p.className = 'kpart ' + kind;
+    p.style.cssText = `left:${Math.random() * 100}%;width:${sz}px;height:${kind === 'win' ? sz * 1.6 : sz}px;background:${cols[i % cols.length]};animation-duration:${(kind === 'loss' ? 4 : 2.6) + Math.random() * 2.4}s;animation-delay:${Math.random() * (kind === 'win' ? 1.8 : 1.2)}s`;
+    if (kind === 'win' && i % 5 === 0) { p.className = 'kpart coin'; p.textContent = '◉'; p.style.cssText += `;background:none;width:auto;height:auto;color:#FBBF24;font-size:${14 + Math.random() * 10}px`; }
+    box.appendChild(p);
+  }
+}
+function stopFx() { clearInterval(fxTimer); fxTimer = null; }
+function startFx(kind) {
+  stopFx();
+  fxTimer = setInterval(() => {
+    if (!M || !overlayOn) return;
+    if (kind === 'win') { const x = (Math.random() - .5) * 9, z = (Math.random() - .5) * 8, col = [PALETTE.GOLD_ROYAL_HIGHLIGHT, PALETTE.PLAYER_BLUE_GLOW, '#10B981', '#f8fafc'][Math.floor(Math.random() * 4)]; ring(x, .15, z, col, 700, 1.2); emit(x, .5, z, col, 22, { s: 3.4, u0: 3, u1: 6.5, g: 5, l: 1.3 }); }
+    else if (kind === 'loss') { const own = M.castles.filter(c => c.owner === 'ENEMY'); if (own.length) { const cv = CV[own[Math.floor(Math.random() * own.length)].index]; ring(cv.x, .1, cv.z, PALETTE.ENEMY_CRIMSON_CORE, 800, 1.4); emit(cv.x, .3, cv.z, '#7f1d1d', 8, { s: .5, u0: 1, u1: 2.5, g: -1.2, l: 1.4 }); } }
+  }, kind === 'win' ? 420 : 600);
+}
+function lootBurst(slot, a) {
+  const cv = CV[slot], col = a === 'PLAYER' ? PALETTE.PLAYER_BLUE_GLOW : a === 'ENEMY' ? PALETTE.ENEMY_CRIMSON_GLOW : PALETTE.GOLD_ROYAL_HIGHLIGHT;
+  ring(cv.x, .12, cv.z, col, 650, 1.5); emit(cv.x, .4, cv.z, PALETTE.GOLD_ROYAL_HIGHLIGHT, 16, { s: 1.6, u0: 2.5, u1: 5, g: 6, l: 1 }); if (!resSkip) SFX.coin();
+}
+async function viewBoard() {
+  resSkip = true; $('#kres').hidden = true; $('#kback').hidden = false; $('#kdraw').hidden = true;
+  if (boardRevealed) return; boardRevealed = true; const G = gid;
+  await Promise.all(M.castles.filter(c => !c.discovered).map((c, k) => sleep(k * 60).then(() => G === gid ? flipCastle(c.index) : null)));
+}
+function backToResults() { $('#kback').hidden = true; $('#kdraw').hidden = true; $('#kres').hidden = false; }
+function settleModal(s) {
+  const G = gid, w = s.winner, kind = w === 'PLAYER' ? 'win' : w === 'ENEMY' ? 'loss' : 'draw';
+  const title = kind === 'draw' ? 'DRAW' : kind === 'win' ? (s.endReason === 'CHECKMATE' ? 'CHECKMATE VICTORY' : 'VICTORY') : 'DEFEAT';
+  const sub = { CHECKMATE: 'Checkmate — the line is sealed', GRIMOIRE_MAJORITY: 'Grimoire exhausted — Pawn majority decides', GRIMOIRE_TIE: 'Grimoire exhausted — Pawns tied' }[s.endReason];
+  const tag = kind === 'win' ? 'The realm kneels before you.' : kind === 'loss' ? 'The Iron Regent claims the realm.' : 'Neither crown prevails.', icon = kind === 'win' ? '👑' : kind === 'loss' ? '💀' : '⚖️';
+  const ownedP = M.castles.filter(c => c.owner === 'PLAYER'), ownedE = M.castles.filter(c => c.owner === 'ENEMY'), free = M.castles.filter(c => !c.owner);
+  const chip = (c, cl) => `<span class="kchip ${cl}">${cn(c.index)} · ${fmt(c.coinPot)}◉</span>`;
+  const pbid = AR.playerBids || [], ebid = AR.enemyBids || []; let tp = 0, te = 0, wonP = 0, wonE = 0, wonU = 0;
+  const tiles = M.castles.map((c, i) => { const pb = pbid[i] || 0, eb = ebid[i] || 0, tot = pb + eb; tp += pb; te += eb; if (c.owner === 'PLAYER') wonP += tot; else if (c.owner === 'ENEMY') wonE += tot; else wonU += tot;
+    return `<div class="kbt ${c.owner === 'PLAYER' ? 'p' : c.owner === 'ENEMY' ? 'e' : ''}"><b>${stag(i)}</b>Σ ${tot} ◉<br><span class="pb">${pb}</span> · <span class="eb">${eb}</span><br>${c.owner === 'PLAYER' ? '♙ YOU' : c.owner === 'ENEMY' ? '♟ RIVAL' : '— UNCLAIMED'}</div>`; }).join('');
+  const vNew = s.updatedPlayerVault, vOld = vNew - s.totalRoundCoinsPlayer, row = (id, cls, label, extra = '') => `<div class="klr ${cls}" id="kr${id}"><span>${label}</span><b id="kv${id}">0 💰</b>${extra}</div>`;
+  const el = $('#kres'); el.className = kind;
+  el.innerHTML = `${kind !== 'loss' ? '<div class="krays"></div>' : ''}<div class="kfx" id="kfx"></div><div class="kcard ${kind}"><div class="kbadge">${icon}</div><h2 class="ktitle ${kind}">${title}</h2><div class="ksub">${sub}</div><div class="ksub2 ${kind}">${tag}</div>
+<div class="kloot"><div class="khead">⚜ LOOT TALLY ⚜</div>
+${row(1, '', '👑 Central Prize Pool')}
+${row(2, '', `🏰 Your Castles (${ownedP.length})`, '<div class="kchips" id="kc2"></div>')}
+${row(3, 'rv', `⚔️ Rival's Castles (${ownedE.length})`, '<div class="kchips" id="kc3"></div>')}
+${row(4, '', `🏚️ Unclaimed (${free.length}) · split 50/50`, '<div class="kchips" id="kc4"></div>')}
+${row(5, 'tot', 'ROUND WINNINGS')}
+${row(6, '', '🏦 Your Vault')}
+<div class="klr rv last" id="kr7"><span>Auction leftover refund (already banked)</span><b>${fmt(s.playerVaultRefundFromAuction)} 💰</b></div></div>
+<div class="kbids" id="kbids"><div class="khead">AUCTION BIDS · WHO WON THEM</div>
+<div class="kbsum">Total bids placed: <b style="color:#FBBF24">${fmt(tp + te)} ◉</b> — You ${fmt(tp)} · Rival ${fmt(te)}<br>Bids on castles won by you: <b style="color:#38bdf8">${fmt(wonP)} ◉</b> · by rival: <b style="color:#f43f5e">${fmt(wonE)} ◉</b> · unclaimed: <b>${fmt(wonU)} ◉</b></div>
+<div class="kbg">${tiles}</div><div class="kbl"><span style="color:#38bdf8">■ won by you</span><span style="color:#f43f5e">■ won by rival</span><span>■ unclaimed</span><span>blue = your bid · red = rival bid</span></div></div>
+<div class="kbtns"><button id="kboard">🔍 View Board</button><button id="kskip">⏭ Skip</button><button class="cta" id="knext">⚔️ Play Next Round (Fresh 30-Coin Purse)</button></div></div>`;
+  el.hidden = false; $('#kback').hidden = true; $('#kdraw').hidden = true; resSkip = false;
+  $('#kboard').onclick = viewBoard; $('#knext').onclick = leave; $('#kskip').onclick = () => { resSkip = true; $('#kskip').hidden = true; };
+  resFx(kind); startFx(kind); if (s.endReason !== 'CHECKMATE') (kind === 'win' ? SFX.win : kind === 'loss' ? SFX.lose : SFX.draw)();
+  const ok = () => G === gid, on = id => { const e = $('#' + id); if (e) e.classList.add('on'); }, v = id => $('#' + id);
+  (async () => {
+    await wait(900); if (!ok()) return;
+    on('kr1'); await countTo(v('kv1'), s.centralPoolAwardPlayer, 700, 0, '+'); if (!ok()) return; await wait(300);
+    on('kr2'); let run = 0; v('kv2').textContent = '+0 💰';
+    for (const c of ownedP) { if (!ok()) return; v('kc2').insertAdjacentHTML('beforeend', chip(c, 'p')); run += c.coinPot; v('kv2').textContent = '+' + fmt(run) + ' 💰'; lootBurst(c.index, 'PLAYER'); await wait(320); }
+    if (!ok()) return; await wait(200);
+    on('kr3'); run = 0; v('kv3').textContent = '0 💰 (theirs)';
+    for (const c of ownedE) { if (!ok()) return; v('kc3').insertAdjacentHTML('beforeend', chip(c, 'e')); run += c.coinPot; v('kv3').textContent = fmt(run) + ' 💰 (theirs)'; lootBurst(c.index, 'ENEMY'); await wait(220); }
+    if (!ok()) return; await wait(200);
+    on('kr4'); for (const c of free) { if (!ok()) return; v('kc4').insertAdjacentHTML('beforeend', chip(c, 'u')); lootBurst(c.index, 'NONE'); await wait(140); }
+    await countTo(v('kv4'), s.unclaimedSplitEach, 600, 0, '+'); if (!ok()) return; await wait(300);
+    on('kr5'); await countTo(v('kv5'), s.totalRoundCoinsPlayer, 1100, 0, '+'); if (!ok()) return;
+    v('kr5').classList.add('pop'); if (kind === 'win' && !resSkip) { ring(0, .15, 0, PALETTE.GOLD_ROYAL_HIGHLIGHT, 900, 3); emit(0, .5, 0, PALETTE.GOLD_ROYAL_HIGHLIGHT, 60, { s: 4, u0: 3, u1: 7, g: 6, l: 1.4 }); SFX.win(); }
+    await wait(350); on('kr6'); await countTo(v('kv6'), vNew, 900, vOld, fmt(vOld) + ' → '); if (!ok()) return;
+    on('kr7'); await wait(300); on('kbids'); const sk = $('#kskip'); if (sk) sk.hidden = true;
+  })().catch(e => console.error(e));
+}
+function leave() { gid++; overlayOn = false; running = false; $('#kmod').hidden = true; $('#kdraw').hidden = true; $('#kcb').hidden = true; document.body.classList.remove('kcb-on'); resetVisuals(); GS().restart(); }
+function resetVisuals() { V.forEach(o => scene.remove(o.g)); V.clear(); H.PLAYER = []; H.ENEMY = []; CV.forEach((cv, i) => { cv.stack = []; removePawn(i, true); }); mate = null; revealed = false; busy = false; reassign = null; tweens.length = 0; stopFx(); boardRevealed = false; resSkip = true; $('#kres').hidden = true; $('#kback').hidden = true; $('#kvig').className = ''; $('#kchk').hidden = true; $('#kpr').hidden = true; }
+
+/* ============================ main loop ============================ */
+function loop(t) {
+  requestAnimationFrame(loop); if (!overlayOn) { lastT = t; return; } const real = t - lastT, dt = Math.min(real / 1000, .1); lastT = t;
+  for (let i = tweens.length - 1; i >= 0; i--) { const w = tweens[i], p = (now() - w.t0 - w.delay) / w.ms; if (p < 0) continue; w.fn(c01(p)); if (p >= 1) { tweens.splice(i, 1); w.res(); } }
+  if (M) {
+    const k = 1 - Math.exp(-14 * dt);
+    for (const a of ['PLAYER', 'ENEMY']) for (const o of H[a]) { if (o.fly || !o.t) continue; const g = o.g, tt = o.t; g.position.x += (tt.x - g.position.x) * k; g.position.y += (tt.y - g.position.y) * k; g.position.z += (tt.z - g.position.z) * k; g.rotation.x += (tt.rx - g.rotation.x) * k; g.rotation.z += (tt.rz - g.rotation.z) * k; if (tt.s) { const sc = g.scale.x + (tt.s - g.scale.x) * k; g.scale.set(sc, sc, sc); }
+      if (a === 'PLAYER') { const h = getHalo(o), on = o.sel || o.spUp; h.visible = on; if (on) { h.rotation.y += dt * 1.8; const mm = o.sel ? HALO.gold : HALO.aura; if (h.children[0].material !== mm) h.children.forEach(c => c.material = mm); } } }
+    if (running) { // monotonic timers
+      if (fsm === 'CHECK_DEFENSE') M.checkContext.defenseRemainingMs -= real; else if (fsm === 'DUEL_TURN' || fsm === 'PAWN_REASSIGN') M.turnRemainingMs -= real;
+      const rem = fsm === 'CHECK_DEFENSE' ? M.checkContext.defenseRemainingMs : M.turnRemainingMs, sec = Math.max(0, Math.ceil(rem / 1000));
+      if (sec !== lastSec) { lastSec = sec; const e = $('#ktime'); e.textContent = sec + 's'; e.classList.toggle('u', sec <= 5); }
+      if (rem <= 0 && !timeoutRun && M.activeActor === 'PLAYER') onTimeout();
+    }
+    const act = M.activeActor === 'PLAYER' && fsm !== 'MATCH_END', pulse = .5 + .5 * Math.sin(t / 260);
+    glowP.material.opacity = act ? .1 + .1 * pulse : .05; glowE.material.opacity = !act && fsm !== 'MATCH_END' ? .1 + .1 * pulse : .05;
+    const line = fsm === 'CHECK_DEFENSE' && M.checkContext ? M.checkContext.winningLine : mate;
+    if (line) for (const i of line) { const f = CV[i].frame; f.material.color.set(mate ? PALETTE.CHECKMATE_EMERALD : PALETTE.CHECK_ALARM_AMBER); f.material.opacity = .55 + .45 * pulse; f.scale.setScalar(1 + .06 * pulse); }
+    if (fsm === 'PAWN_REASSIGN') M.castles.forEach((c, i) => { if (c.owner === 'PLAYER') { CV[i].frame.material.opacity = .4 + .6 * pulse; } });
+    if (mate && Math.random() < .25) { const i = mate[Math.floor(Math.random() * 4)]; emit(CV[i].x, .5, CV[i].z, PALETTE.CHECKMATE_EMERALD, 2, { s: .7, u0: 1.2, u1: 2.6, g: 3, l: 1 }); }
+    CV.forEach((cv, i) => { const p = cv.pawn; if (!p) return; const age = Math.min(1, (now() - p.born) / 320), sc = age < 1 ? (1 + 1.7 * Math.pow(age - 1, 3) + 1.7 * Math.pow(age - 1, 2)) : 1; p.g.scale.setScalar(Math.max(.01, sc));
+      p.g.rotation.y += dt * (mate && mate.includes(i) ? 3.2 : 1.4); p.g.position.set(cv.x + .68, stackTop(i) + .18 + (mate && mate.includes(i) ? Math.sin(t / 180 + i) * .12 : 0), cv.z - .72); });
+  }
+  // sparks
+  const sd = sparkData; if (sd.live) { let any = 0; for (let i = 0; i < sd.n; i++) { if (sd.life[i] <= 0) continue; sd.life[i] -= dt; if (sd.life[i] <= 0) { dummy.scale.set(0, 0, 0); } else { any = 1; sd.v[i * 3 + 1] -= sd.g[i] * dt; sd.p[i * 3] += sd.v[i * 3] * dt; sd.p[i * 3 + 1] = Math.max(.03, sd.p[i * 3 + 1] + sd.v[i * 3 + 1] * dt); sd.p[i * 3 + 2] += sd.v[i * 3 + 2] * dt; dummy.scale.setScalar(sd.life[i] / sd.max[i]); dummy.rotation.y += dt * 4; }
+      dummy.position.set(sd.p[i * 3], sd.p[i * 3 + 1], sd.p[i * 3 + 2]); dummy.updateMatrix(); inst.setMatrixAt(i, dummy.matrix); } inst.instanceMatrix.needsUpdate = true; sd.live = any; dummy.rotation.set(0, 0, 0); }
+  for (const r of ringPool) if (r.m.visible) { const p = (now() - r.t0) / r.ms; if (p >= 1) r.m.visible = false; else { r.m.scale.setScalar((.35 + p * 1.9) * (r.sc || 1)); r.m.material.opacity = (1 - p) * .9; } }
+  for (let i = 0; i < ptsA.length; i += 3) { ptsA[i + 1] += dt * .18; if (ptsA[i + 1] > 8) ptsA[i + 1] = 0; } pts.geometry.attributes.position.needsUpdate = true;
+  cam.position.set(Math.sin(t / 5000) * .2, camBase.y, camBase.z); cam.lookAt(0, 0, camBase.tz); R.render(scene, cam);
+}
+async function onTimeout() {
+  timeoutRun = true; const G = gid, n = M.turnNumber;
+  if (fsm === 'PAWN_REASSIGN' && reassign) reassign.res(null);
+  while (busy && G === gid) await sleep(60); if (G !== gid) return;
+  if (fsm === 'CHECK_DEFENSE') { toast('Time expired!'); return checkmate(); }
+  if (fsm === 'DUEL_TURN' && M.turnNumber === n) { toast('Time expired — turn committed'); M.selectedCardIds = []; commitTurn(); }
+}
+
+/* ============================ Module A bridge & init ============================ */
+function adapt(store) {
+  const ca = store.moduleAState.castles, r = store.auctionResult, idx = c => parseInt(String(c.id).slice(2), 10) - 1, sum = k => ca.reduce((n, c) => n + c[k], 0);
+  return { firstTurnOwner: r.firstMover === 'player' ? 'PLAYER' : 'ENEMY', centralPrizePool: r.prizePool || 30, slotPots: ca.map(c => c.playerBid + c.enemyBid), playerPreClaimedSlots: r.playerPreClaims.map(idx), enemyPreClaimedSlots: r.enemyPreClaims.map(idx), playerVaultRefund: store.arenaConfig.initialReservePerSide - sum('playerBid'), enemyVaultRefund: store.arenaConfig.initialReservePerSide - sum('enemyBid'), names: ca.map(c => c.name), playerBids: ca.map(c => c.playerBid), enemyBids: ca.map(c => c.enemyBid) };
+}
+async function startDuel(store) {
+  if (!window.THREE) { alert('Three.js failed to load — check your connection and reload.'); return; }
+  const G = ++gid; build(); resetVisuals(); AR = adapt(store); const v = store.vaults; K.vaults = { playerVault: v.player, enemyVault: v.enemy }; K.auctionResult = AR;
+  M = { turnNumber: 1, activeActor: AR.firstTurnOwner, turnRemainingMs: ARENA_CONFIG.TURN_DURATION_MS, unravelUsedThisTurn: false, turnActionCommitted: false, pendingConqueredSlot: null, checkContext: null, grimoire: shuffle(buildDeck()), ashPyre: [], playerHand: [], enemyHand: [], selectedCardIds: [], castles: [], settlement: null, lastClaimed: null };
+  K.moduleB = M; K.chronicle = []; for (let i = 0; i < 16; i++) M.castles.push({ index: i, row: i >> 2, col: i & 3, discovered: false, owner: null, cardStack: [M.grimoire.pop()], coinPot: AR.slotPots[i] });
+  overlayOn = true; document.body.classList.add('kcb-on'); $('#kcb').hidden = false; $('#kmod').hidden = true; setFsm('MODULE_B_INIT'); busy = true; running = false; fit(); frames(); updatePiles(); hud(); lastT = now();
+  await Promise.all(M.castles.map((_, i) => dealCastle(i, i * 55))); if (G !== gid) return;
+  await Promise.all([draw('PLAYER', 5), draw('ENEMY', 5)]); if (G !== gid) return;
+  for (const [a, list] of [['PLAYER', AR.playerPreClaimedSlots], ['ENEMY', AR.enemyPreClaimedSlots]]) for (const sl of list) { await flipCastle(sl); if (G !== gid) return; spawnPawn(sl, a); await triggers(a, [M.castles[sl].cardStack[0]]); if (G !== gid) return; }
+  log('Duel begins'); busy = false; startTurn();
+}
+window.ModuleB = { initFromAuction: store => { startDuel(store).catch(e => { console.error(e); alert('Module B error: ' + e.message); }); return { received: true }; }, _logic: { resolveCombat, computeSettlement, buildDeck, findLine }, _dbg: { st: () => ({ M, fsm, busy, reassign, mate }), toggleSel, humanAttack, doUnravel, humanBurn, commitTurn, plays } };
+})();
+
+  </script>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* ========================================================================
+         1. Web Audio Synthesizer (Zero External Sound Assets)
+         ======================================================================== */
+      class ArenaSoundFX {
+        constructor() {
+          this.ctx = null;
+          this.enabled = true;
+        }
+
+        ensureContext() {
+          if (!this.enabled) return null;
+          try {
+            if (!this.ctx) {
+              const AudioCtx = window.AudioContext || window.webkitAudioContext;
+              if (AudioCtx) this.ctx = new AudioCtx();
+            }
+            if (this.ctx && this.ctx.state === 'suspended') {
+              this.ctx.resume().catch(() => {});
+            }
+            return this.ctx;
+          } catch (_) {
+            return null;
+          }
+        }
+
+        playTone(freq, duration = 0.12, type = 'triangle', gainPeak = 0.12, delay = 0) {
+          const ctx = this.ensureContext();
+          if (!ctx) return;
+          try {
+            const now = ctx.currentTime + delay;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(gainPeak, now + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + duration + 0.02);
+          } catch (_) {
+            // Ignore audio errors on restricted devices
+          }
+        }
+
+        click() { this.playTone(540, 0.06, 'sine', 0.08); }
+        bid() {
+          this.playTone(620, 0.09, 'triangle', 0.12, 0);
+          this.playTone(880, 0.11, 'sine', 0.1, 0.05);
+        }
+        aiBid() {
+          this.playTone(340, 0.11, 'sawtooth', 0.07, 0);
+          this.playTone(270, 0.14, 'triangle', 0.08, 0.06);
+        }
+        lockIn() {
+          this.playTone(523.25, 0.12, 'triangle', 0.12, 0);
+          this.playTone(659.25, 0.12, 'triangle', 0.12, 0.08);
+          this.playTone(783.99, 0.22, 'sine', 0.14, 0.16);
+        }
+        settle() {
+          this.playTone(440, 0.16, 'triangle', 0.12, 0);
+          this.playTone(554.37, 0.16, 'triangle', 0.12, 0.12);
+          this.playTone(659.25, 0.28, 'sine', 0.14, 0.24);
+        }
+      }
+
+      const sfx = new ArenaSoundFX();
+
+      /* ========================================================================
+         2. Animated Holographic Canvas Backdrop
+         ======================================================================== */
+      const canvas = document.getElementById('world');
+      const ctx2d = canvas.getContext('2d');
+      let particles = [];
+
+      function resizeCanvas() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+        ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const count = Math.max(36, Math.min(90, Math.floor((w * h) / 18000)));
+        particles = Array.from({ length: count }, () => ({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: 0.8 + Math.random() * 2.1,
+          vx: (Math.random() - 0.5) * 0.28,
+          vy: -0.15 - Math.random() * 0.35,
+          gold: Math.random() > 0.65,
+          alpha: 0.2 + Math.random() * 0.55
+        }));
+      }
+
+      function renderBackdrop(time) {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        ctx2d.clearRect(0, 0, w, h);
+
+        // Subtle holographic perspective grid lines
+        ctx2d.strokeStyle = 'rgba(56, 189, 248, 0.045)';
+        ctx2d.lineWidth = 1;
+        const step = 64;
+        const offset = (time * 0.012) % step;
+        for (let x = offset; x < w; x += step) {
+          ctx2d.beginPath();
+          ctx2d.moveTo(x, 0);
+          ctx2d.lineTo(x, h);
+          ctx2d.stroke();
+        }
+        for (let y = offset; y < h; y += step) {
+          ctx2d.beginPath();
+          ctx2d.moveTo(0, y);
+          ctx2d.lineTo(w, y);
+          ctx2d.stroke();
+        }
+
+        // Floating motes
+        for (const p of particles) {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.y < -10) p.y = h + 10;
+          if (p.x < -10) p.x = w + 10;
+          if (p.x > w + 10) p.x = -10;
+
+          ctx2d.beginPath();
+          ctx2d.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx2d.fillStyle = p.gold
+            ? `rgba(234, 179, 8, ${p.alpha})`
+            : `rgba(56, 189, 248, ${p.alpha})`;
+          ctx2d.fill();
+        }
+
+        requestAnimationFrame(renderBackdrop);
+      }
+
+      /* ========================================================================
+         3. Castle Data & Persistent Vault Storage
+         ======================================================================== */
+      const CASTLE_DEFS = [
+        { id: 'c-01', name: 'Ember Crown Keep', kingdom: 'Solstice Reach', weight: 10 },
+        { id: 'c-02', name: 'Astral Spire', kingdom: 'Solstice Reach', weight: 9 },
+        { id: 'c-03', name: 'Glass Bastion', kingdom: 'Solstice Reach', weight: 7 },
+        { id: 'c-04', name: 'Cinder Watch', kingdom: 'Solstice Reach', weight: 5 },
+        { id: 'c-05', name: 'Sovereign Citadel', kingdom: 'Ironvale', weight: 10 },
+        { id: 'c-06', name: 'Anvil Fortress', kingdom: 'Ironvale', weight: 8 },
+        { id: 'c-07', name: 'Slag Redoubt', kingdom: 'Ironvale', weight: 6 },
+        { id: 'c-08', name: 'Dusk Gate', kingdom: 'Ironvale', weight: 5 },
+        { id: 'c-09', name: 'Tideheart Hold', kingdom: 'Azure Marches', weight: 9 },
+        { id: 'c-10', name: 'Stormwatch Tower', kingdom: 'Azure Marches', weight: 8 },
+        { id: 'c-11', name: 'Pearl Sanctum', kingdom: 'Azure Marches', weight: 6 },
+        { id: 'c-12', name: 'Coral Outpost', kingdom: 'Azure Marches', weight: 4 },
+        { id: 'c-13', name: 'Obsidian Rook', kingdom: 'Shadowfen', weight: 9 },
+        { id: 'c-14', name: 'Vespera Hall', kingdom: 'Shadowfen', weight: 7 },
+        { id: 'c-15', name: 'Gloom Watchtower', kingdom: 'Shadowfen', weight: 6 },
+        { id: 'c-16', name: 'Mire Keep', kingdom: 'Shadowfen', weight: 4 }
+      ];
+
+      const STORAGE_KEY = 'kc_module_a_vaults_v1';
+      const INITIAL_RESERVE = 15;
+      const AUCTION_DURATION = 120;
+
+      function loadVaults() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (typeof parsed.player === 'number' && typeof parsed.enemy === 'number') {
+              return { player: parsed.player, enemy: parsed.enemy };
+            }
+          }
+        } catch (_) {}
+        return { player: 0, enemy: 0 };
+      }
+
+      function saveVaults(vaults) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(vaults));
+        } catch (_) {}
+      }
+
+      function createFreshCastles() {
+        return CASTLE_DEFS.map((def) => ({
+          ...def,
+          playerBid: 0,
+          enemyBid: 0
+        }));
+      }
+
+      /* ========================================================================
+         4. Game State, Global Store & Module B Integration Contract
+         ======================================================================== */
+      const state = {
+        phase: 'ENTRY', // ENTRY | COIN_TOSS | AUCTION | SETTLED
+        firstMover: 'player',
+        tossCall: null,
+        tossResult: null,
+        timeRemaining: AUCTION_DURATION,
+        playerReserve: INITIAL_RESERVE,
+        enemyReserve: INITIAL_RESERVE,
+        playerLocked: false,
+        enemyLocked: false,
+        selectedCastleId: CASTLE_DEFS[0].id,
+        castles: createFreshCastles(),
+        vaults: loadVaults(),
+        auctionResult: null,
+        playerClaimPins: []
+      };
+
+      const GameRootStore = {
+        get phase() { return state.phase; },
+        get moduleAState() {
+          return {
+            firstMover: state.firstMover,
+            timeRemaining: state.timeRemaining,
+            playerReserve: state.playerReserve,
+            enemyReserve: state.enemyReserve,
+            playerLocked: state.playerLocked,
+            enemyLocked: state.enemyLocked,
+            selectedCastleId: state.selectedCastleId,
+            castles: state.castles.map((c) => ({ ...c }))
+          };
+        },
+        get auctionResult() { return state.auctionResult; },
+        get vaults() { return { ...state.vaults }; },
+        arenaConfig: {
+          gridSize: 4,
+          castleCount: 16,
+          maxPreClaimsPerSide: 2,
+          initialReservePerSide: INITIAL_RESERVE,
+          prizePool: 30,
+          durationSeconds: AUCTION_DURATION
+        },
+        palette: {
+          background: '#080b16',
+          gold: '#eab308',
+          player: '#38bdf8',
+          enemy: '#f43f5e'
+        }
+      };
+
+      window.GameRootStore = GameRootStore;
+      // Module B bridge: settle coins into A's live vault state and restart the loop
+      GameRootStore.creditVaults = function (p, e) {
+        state.vaults.player += p;
+        state.vaults.enemy += e;
+        saveVaults(state.vaults);
+        renderAll();
+      };
+      GameRootStore.restart = function () { startCoinToss(); };
+      window.ModuleB = window.ModuleB || {
+        initFromAuction(store) {
+          showToast('ModuleB.initFromAuction() stub invoked with sealed auction payload.');
+          return { received: true, phase: store.phase, timestamp: Date.now() };
+        }
+      };
+
+      /* ========================================================================
+         5. DOM References & UI Helpers
+         ======================================================================== */
+      const dom = {
+        phaseLabel: document.getElementById('phase-label'),
+        soundToggle: document.getElementById('sound-toggle'),
+        hud: document.getElementById('hud'),
+        arenaSection: document.getElementById('arena-section'),
+        dock: document.getElementById('dock'),
+        entryScreen: document.getElementById('entry-screen'),
+        tossScreen: document.getElementById('toss-screen'),
+        tossCoin: document.getElementById('toss-coin'),
+        tossMessage: document.getElementById('toss-message'),
+        tossProgress: document.getElementById('toss-progress'),
+        callHeads: document.getElementById('call-heads'),
+        callTails: document.getElementById('call-tails'),
+        settleScreen: document.getElementById('settle-screen'),
+        settleSummary: document.getElementById('settle-summary'),
+        resultPlayerClaims: document.getElementById('result-player-claims'),
+        resultEnemyClaims: document.getElementById('result-enemy-claims'),
+        playerBudget: document.getElementById('player-budget'),
+        enemyBudget: document.getElementById('enemy-budget'),
+        playerVault: document.getElementById('player-vault'),
+        enemyVault: document.getElementById('enemy-vault'),
+        playerClaims: document.getElementById('player-claims'),
+        enemyClaims: document.getElementById('enemy-claims'),
+        timer: document.getElementById('timer'),
+        timerFill: document.getElementById('timer-fill'),
+        board: document.getElementById('board'),
+        selectedName: document.getElementById('selected-name'),
+        selectedStatus: document.getElementById('selected-status'),
+        lockInBtn: document.getElementById('lock-in'),
+        claimBtn: document.getElementById('claim-here'),
+        bidFeedback: document.getElementById('bid-feedback'),
+        toast: document.getElementById('toast'),
+        devToggle: document.getElementById('dev-toggle'),
+        devPanel: document.getElementById('dev-panel'),
+        enterBtn: document.getElementById('enter'),
+        showResultBtn: document.getElementById('show-result'),
+        viewAuctionBtn: document.getElementById('view-auction'),
+        bidControls: document.querySelector('.bid-controls'),
+        bidAmount: document.getElementById('bid-amount'),
+        bidCustomBtn: document.getElementById('bid-custom-btn'),
+        resultsBar: document.getElementById('results-bar'),
+        resBattleBtn: document.getElementById('res-battle'),
+        resNewBtn: document.getElementById('res-new'),
+        skipTossBtn: document.getElementById('skip-toss'),
+        endAuctionBtn: document.getElementById('end-auction'),
+        resetVaultsBtn: document.getElementById('reset-vaults')
+      };
+
+      let toastTimer = null;
+      function showToast(msg) {
+        dom.toast.textContent = msg;
+        dom.toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          dom.toast.classList.remove('show');
+        }, 2800);
+      }
+
+      function formatClock(sec) {
+        const clamped = Math.max(0, Math.floor(sec));
+        const m = Math.floor(clamped / 60);
+        const s = clamped % 60;
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      }
+
+      /* ========================================================================
+         6. Pre-Claim & Lead Calculation
+         ======================================================================== */
+      function getLeadSide(castle) {
+        if (castle.playerBid > castle.enemyBid) return 'player';
+        if (castle.enemyBid > castle.playerBid) return 'enemy';
+        if (castle.playerBid > 0 || castle.enemyBid > 0) return 'tied';
+        return 'none';
+      }
+
+      const castleNo = (castle) => parseInt(String(castle.id).slice(2), 10);
+      const castleRC = (castle) => {
+        const i = castleNo(castle) - 1;
+        return { r: (i >> 2) + 1, c: (i & 3) + 1 };
+      };
+      const castleLabel = (castle) => {
+        const p = castleRC(castle);
+        return `#${castleNo(castle)} (R${p.r}·C${p.c})`;
+      };
+      const playerLeadsCastle = (castle) => castle.playerBid > castle.enemyBid && castle.playerBid > 0;
+
+      function computePreClaims() {
+        const eligible = state.castles.filter(playerLeadsCastle);
+        // Claims the player moved by hand stay put while the player still leads that castle
+        const pinned = state.playerClaimPins
+          .map((id) => eligible.find((c) => c.id === id))
+          .filter(Boolean)
+          .slice(0, 2);
+        const rest = eligible
+          .filter((c) => !pinned.includes(c))
+          .sort((a, b) => ((b.playerBid - b.enemyBid) - (a.playerBid - a.enemyBid)) || (b.weight - a.weight));
+        const playerLeads = [...pinned, ...rest]
+          .slice(0, 2)
+          .map((c) => c.id);
+
+        const enemyLeads = state.castles
+          .filter((c) => c.enemyBid > c.playerBid && c.enemyBid > 0)
+          .sort((a, b) => (b.enemyBid - a.enemyBid) || (b.weight - a.weight))
+          .slice(0, 2)
+          .map((c) => c.id);
+
+        return {
+          playerIds: new Set(playerLeads),
+          enemyIds: new Set(enemyLeads)
+        };
+      }
+
+      /* ========================================================================
+         7. Phase State Machine, Coin Toss & Auction Loop
+         ======================================================================== */
+      let countdownInterval = null;
+      let aiTimer = null;
+      let tossTimeout = null;
+      let tossing = false;
+
+      function clearTimers() {
+        clearInterval(countdownInterval);
+        clearTimeout(aiTimer);
+        clearTimeout(tossTimeout);
+        countdownInterval = null;
+        aiTimer = null;
+        tossTimeout = null;
+      }
+
+      function setPhase(nextPhase) {
+        state.phase = nextPhase;
+        dom.entryScreen.hidden = nextPhase !== 'ENTRY';
+        dom.tossScreen.hidden = nextPhase !== 'COIN_TOSS';
+        const viewingResults = nextPhase === 'SETTLED' && !!state.viewResults;
+        const showArena = nextPhase === 'AUCTION' || viewingResults;
+        document.body.classList.toggle('auction-view', showArena);
+        dom.hud.hidden = !showArena;
+        dom.arenaSection.hidden = !showArena;
+        dom.dock.hidden = !showArena;
+        dom.settleScreen.hidden = nextPhase !== 'SETTLED' || viewingResults;
+        dom.bidControls.hidden = viewingResults;
+        dom.resultsBar.hidden = !viewingResults;
+
+        const phaseLabels = {
+          ENTRY: 'ARENA INITIALIZED',
+          COIN_TOSS: 'COIN OF THE CROWN',
+          AUCTION: 'LIVE CASTLE AUCTION',
+          SETTLED: viewingResults ? 'AUCTION RESULTS' : 'AUCTION SEALED'
+        };
+        dom.phaseLabel.textContent = phaseLabels[nextPhase] || nextPhase;
+        renderAll();
+      }
+
+      function startCoinToss() {
+        clearTimers();
+        state.castles = createFreshCastles();
+        state.playerReserve = INITIAL_RESERVE;
+        state.enemyReserve = INITIAL_RESERVE;
+        state.playerLocked = false;
+        state.enemyLocked = false;
+        state.timeRemaining = AUCTION_DURATION;
+        state.auctionResult = null;
+        state.selectedCastleId = CASTLE_DEFS[0].id;
+        state.playerClaimPins = [];
+        state.viewResults = false;
+        tossing = false;
+
+        setPhase('COIN_TOSS');
+        sfx.click();
+
+        // The player first calls a side (see setTossCall), then tosses the coin by clicking it (see performToss)
+        state.tossCall = null;
+        state.tossResult = null;
+        dom.tossCoin.classList.remove('flipping', 'res-tails', 'pick-heads', 'pick-tails');
+        dom.tossCoin.style.removeProperty('--ry');
+        dom.tossCoin.style.removeProperty('--from');
+        dom.tossCoin.classList.add('locked');
+        [dom.callHeads, dom.callTails].forEach((b) => {
+          b.disabled = false;
+          b.classList.remove('selected');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        dom.tossMessage.textContent = 'CALL YOUR SIDE: HEADS OR TAILS';
+        dom.tossMessage.classList.add('ready');
+        dom.tossProgress.classList.remove('active');
+      }
+
+      function setTossCall(side) {
+        if (state.phase !== 'COIN_TOSS' || tossing) return;
+        state.tossCall = side;
+        dom.callHeads.classList.toggle('selected', side === 'heads');
+        dom.callTails.classList.toggle('selected', side === 'tails');
+        dom.callHeads.setAttribute('aria-pressed', String(side === 'heads'));
+        dom.callTails.setAttribute('aria-pressed', String(side === 'tails'));
+        dom.tossCoin.classList.remove('locked');
+        const prev = dom.tossCoin.classList.contains('pick-tails') ? '180deg' : '0deg';
+        dom.tossCoin.style.setProperty('--from', prev);
+        dom.tossCoin.style.setProperty('--ry', side === 'tails' ? '180deg' : '0deg');
+        dom.tossCoin.classList.remove('pick-heads', 'pick-tails');
+        void dom.tossCoin.offsetWidth; // restart the turn animation
+        dom.tossCoin.classList.add(side === 'tails' ? 'pick-tails' : 'pick-heads');
+        dom.tossMessage.textContent = `YOU CALLED ${side.toUpperCase()} — TAP THE COIN TO TOSS`;
+        dom.tossMessage.classList.add('ready');
+        sfx.click();
+      }
+
+      function performToss() {
+        if (state.phase !== 'COIN_TOSS' || tossing) return;
+        if (!state.tossCall) {
+          showToast('Call HEADS or TAILS before tossing the coin.');
+          dom.tossMessage.textContent = 'CALL YOUR SIDE FIRST: HEADS OR TAILS';
+          return;
+        }
+        tossing = true;
+
+        // Cryptographic coin toss via Web Crypto API; the player wins initiative by calling the side correctly
+        const buf = new Uint32Array(1);
+        window.crypto.getRandomValues(buf);
+        const landed = buf[0] % 2 === 0 ? 'heads' : 'tails';
+        state.tossResult = landed;
+        state.firstMover = landed === state.tossCall ? 'player' : 'enemy';
+
+        dom.callHeads.disabled = true;
+        dom.callTails.disabled = true;
+        dom.tossCoin.classList.remove('pick-heads', 'pick-tails');
+        dom.tossCoin.classList.toggle('res-tails', landed === 'tails');
+        dom.tossCoin.classList.add('flipping');
+        dom.tossMessage.classList.remove('ready');
+        dom.tossMessage.textContent = 'CALLING THE FATES…';
+        dom.tossProgress.classList.remove('active');
+        void dom.tossProgress.offsetWidth;
+        dom.tossProgress.classList.add('active');
+        sfx.click();
+
+        tossTimeout = setTimeout(() => {
+          dom.tossMessage.textContent =
+            state.firstMover === 'player'
+              ? `${landed.toUpperCase()}! YOU CALLED IT — BLUE BANNER (THE CHALLENGER) WINS FIRST INITIATIVE`
+              : `${landed.toUpperCase()}! THE CALL WAS WRONG — CRIMSON BANNER (THE IRON REGENT) WINS FIRST INITIATIVE`;
+          sfx.lockIn();
+          tossTimeout = setTimeout(() => {
+            startAuction();
+          }, 950);
+        }, 1450);
+      }
+
+      function startAuction() {
+        clearTimers();
+        setPhase('AUCTION');
+        dom.bidFeedback.textContent =
+          state.firstMover === 'player'
+            ? 'You hold opening initiative. Bid on any castle or lock in your reserve.'
+            : 'The Iron Regent opens the bidding. Watch the board and counter-bid.';
+
+        countdownInterval = setInterval(() => {
+          if (state.phase !== 'AUCTION') return;
+          state.timeRemaining -= 1;
+          renderTimer();
+
+          if (state.timeRemaining <= 0) {
+            settleAuction('Time expired');
+          }
+        }, 1000);
+
+        scheduleAiTurn(state.firstMover === 'enemy' ? 900 : 2400);
+      }
+
+      function settleAuction(reason = 'Auction completed') {
+        if (state.phase === 'SETTLED') return;
+        clearTimers();
+
+        // Refund any remaining unlocked reserves into persistent vaults
+        if (!state.playerLocked && state.playerReserve > 0) {
+          state.vaults.player += state.playerReserve;
+          state.playerReserve = 0;
+        }
+        if (!state.enemyLocked && state.enemyReserve > 0) {
+          state.vaults.enemy += state.enemyReserve;
+          state.enemyReserve = 0;
+        }
+        saveVaults(state.vaults);
+
+        const claims = computePreClaims();
+        const playerClaimedCastles = state.castles.filter((c) => claims.playerIds.has(c.id));
+        const enemyClaimedCastles = state.castles.filter((c) => claims.enemyIds.has(c.id));
+
+        state.auctionResult = Object.freeze({
+          reason,
+          settledAt: new Date().toISOString(),
+          firstMover: state.firstMover,
+          prizePool: 30,
+          playerPreClaims: playerClaimedCastles.map((c) => ({
+            id: c.id,
+            name: c.name,
+            kingdom: c.kingdom,
+            playerBid: c.playerBid,
+            enemyBid: c.enemyBid
+          })),
+          enemyPreClaims: enemyClaimedCastles.map((c) => ({
+            id: c.id,
+            name: c.name,
+            kingdom: c.kingdom,
+            playerBid: c.playerBid,
+            enemyBid: c.enemyBid
+          })),
+          vaults: { ...state.vaults }
+        });
+
+        dom.resultPlayerClaims.textContent = String(playerClaimedCastles.length);
+        dom.resultEnemyClaims.textContent = String(enemyClaimedCastles.length);
+
+        const pNames = playerClaimedCastles.map(castleLabel).join(', ') || 'None';
+        const eNames = enemyClaimedCastles.map(castleLabel).join(', ') || 'None';
+        dom.settleSummary.textContent = `${reason}. Your pre-claims (${playerClaimedCastles.length}/2): ${pNames}. Iron Regent pre-claims (${enemyClaimedCastles.length}/2): ${eNames}. Remaining reserves banked to vaults.`;
+
+        sfx.settle();
+        state.viewResults = false;
+        setPhase('SETTLED');
+      }
+
+      /* ========================================================================
+         8. Player Bidding, Lock-In & AI Counter-Bidding
+         ======================================================================== */
+      function placePlayerBid(amountMode) {
+        if (state.phase !== 'AUCTION') return;
+        if (state.playerLocked) {
+          showToast('Your bid reserve is already locked in.');
+          return;
+        }
+        if (state.playerReserve <= 0) {
+          showToast('No uncommitted coins remaining in your reserve.');
+          return;
+        }
+
+        const castle = state.castles.find((c) => c.id === state.selectedCastleId);
+        if (!castle) return;
+
+        let delta = 0;
+        if (amountMode === 'max') {
+          delta = state.playerReserve;
+        } else {
+          const requested = Number(amountMode) || 0;
+          delta = Math.min(requested, state.playerReserve);
+        }
+
+        if (delta <= 0) return;
+
+        castle.playerBid += delta;
+        state.playerReserve -= delta;
+        sfx.bid();
+
+        dom.bidFeedback.textContent = `Staked +${delta} ◉ on Castle ${castleLabel(castle)} (Total: ${castle.playerBid} ◉).`;
+        renderAll();
+
+        // Trigger responsive AI counter-bid if AI isn't locked
+        if (!state.enemyLocked && state.enemyReserve > 0) {
+          scheduleAiTurn(1100);
+        } else if (state.enemyLocked && state.playerLocked) {
+          settleAuction('Both sides locked in');
+        }
+      }
+
+      // Move a pre-claim onto a castle the player already leads. Costs nothing: no new bid needed.
+      function claimSelectedCastle() {
+        if (state.phase !== 'AUCTION') return;
+        const castle = state.castles.find((c) => c.id === state.selectedCastleId);
+        if (!castle) return;
+        const claims = computePreClaims();
+        if (claims.playerIds.has(castle.id)) {
+          showToast('That castle is already one of your claims.');
+          return;
+        }
+        if (!playerLeadsCastle(castle)) {
+          showToast('You can only claim a castle where you out-bid the rival.');
+          return;
+        }
+        const current = state.castles.filter((c) => claims.playerIds.has(c.id));
+        let released = null;
+        if (current.length >= 2) {
+          current.sort((a, b) => (a.playerBid - a.enemyBid) - (b.playerBid - b.enemyBid));
+          released = current.shift();
+        }
+        state.playerClaimPins = [...current.map((c) => c.id), castle.id];
+        sfx.bid();
+        dom.bidFeedback.textContent = released
+          ? `Claim moved from Castle ${castleLabel(released)} to Castle ${castleLabel(castle)} at no cost.`
+          : `Castle ${castleLabel(castle)} claimed at no cost.`;
+        renderAll();
+      }
+
+      function lockInPlayer() {
+        if (state.phase !== 'AUCTION' || state.playerLocked) return;
+
+        const refunded = state.playerReserve;
+        if (refunded > 0) {
+          state.vaults.player += refunded;
+          state.playerReserve = 0;
+          saveVaults(state.vaults);
+        }
+        state.playerLocked = true;
+        sfx.lockIn();
+
+        showToast(
+          refunded > 0
+            ? `Locked in! ${refunded} ◉ refunded to your persistent vault.`
+            : 'Locked in your final castle bids!'
+        );
+        dom.bidFeedback.textContent = 'Reserve locked. You cannot place further bids this match.';
+        renderAll();
+
+        if (state.enemyLocked) {
+          settleAuction('Both sides locked in');
+        } else {
+          // The player's bids are now final: let the Regent make its last informed moves
+          scheduleAiTurn(650);
+        }
+      }
+
+      /* ---- Iron Regent bidding brain ----------------------------------------
+         Only the top two castles each side leads become pre-claims, so the Regent
+         concentrates coins on the best pair (power + shared winning line), denies the
+         player's claims when that is cheap, holds coins back early to counter-bid or
+         snipe late, and reacts instantly once the player locks in. */
+      const AI_LINES = [[0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15],[0,4,8,12],[1,5,9,13],[2,6,10,14],[3,7,11,15],[0,5,10,15],[3,6,9,12]];
+      const aiSharesLine = (i, j) => AI_LINES.some((l) => l.includes(i) && l.includes(j));
+      const AI_COIN_VALUE = 1.4;   // castle-power points one coin is worth to the Regent
+      const AI_DENY_WEIGHT = 0.5;  // how much taking a claim away from the player is worth
+
+      function aiClaimValue(ids) {
+        const cs = state.castles;
+        let v = 0;
+        ids.forEach((i) => { v += cs[i].weight; });
+        if (ids.length === 2 && aiSharesLine(ids[0], ids[1])) v += 4; // two pawns already on one line
+        return v;
+      }
+
+      // Who would hold each side's two pre-claims for a given set of Regent bids (mirrors computePreClaims)
+      function aiProjectClaims(enemyBids) {
+        const cs = state.castles;
+        const idx = cs.map((_, i) => i);
+        const mine = idx
+          .filter((i) => enemyBids[i] > cs[i].playerBid)
+          .sort((a, b) => (enemyBids[b] - enemyBids[a]) || (cs[b].weight - cs[a].weight))
+          .slice(0, 2);
+        const led = idx.filter((i) => cs[i].playerBid > enemyBids[i]);
+        const pinned = state.playerClaimPins
+          .map((id) => cs.findIndex((c) => c.id === id))
+          .filter((i) => led.includes(i))
+          .slice(0, 2);
+        const rest = led
+          .filter((i) => !pinned.includes(i))
+          .sort((a, b) => ((cs[b].playerBid - enemyBids[b]) - (cs[a].playerBid - enemyBids[a])) || (cs[b].weight - cs[a].weight));
+        return { mine, theirs: [...pinned, ...rest].slice(0, 2) };
+      }
+
+      // Coins the Regent keeps unspent so it can counter-bid or snipe later
+      function aiHoldback() {
+        if (state.playerLocked) return 0;
+        const t = state.timeRemaining;
+        const frac = t > 90 ? 0.5 : t > 50 ? 0.3 : t > 20 ? 0.12 : 0;
+        return Math.floor(INITIAL_RESERVE * frac);
+      }
+
+      function aiChooseBid() {
+        const cs = state.castles;
+        const t = state.timeRemaining;
+        const open = !state.playerLocked; // the player can still answer a bid
+        const spendable = Math.max(0, state.enemyReserve - aiHoldback());
+        if (spendable <= 0) return null;
+
+        // While the player can still react, lead by a safety margin on strong or late castles
+        const extra = (c) => (open ? (c.weight >= 9 ? 1 : 0) + (t <= 25 ? 1 : 0) : 0);
+        const costs = cs.map((c) => {
+          const lead = c.playerBid - c.enemyBid + 1;
+          return lead > 0 ? lead + extra(c) : 0;
+        });
+        const baseBids = cs.map((c) => c.enemyBid);
+        const base = aiProjectClaims(baseBids);
+        const score = (ev) => aiClaimValue(ev.mine) - AI_DENY_WEIGHT * aiClaimValue(ev.theirs);
+        const baseScore = score(base);
+
+        let best = null;
+        const consider = (set) => {
+          const total = set.reduce((n, i) => n + costs[i], 0);
+          if (total <= 0 || total > spendable) return;
+          const bids = baseBids.slice();
+          set.forEach((i) => { if (costs[i] > 0) bids[i] = cs[i].enemyBid + costs[i]; });
+          const gain = score(aiProjectClaims(bids)) - baseScore - AI_COIN_VALUE * total + Math.random() * 0.5;
+          if (!best || gain > best.gain) best = { set, gain };
+        };
+        for (let i = 0; i < cs.length; i++) {
+          consider([i]);
+          for (let j = i + 1; j < cs.length; j++) consider([i, j]);
+        }
+
+        if (best && best.gain > 0.75) {
+          const target = best.set
+            .filter((i) => costs[i] > 0)
+            .sort((a, b) => cs[b].weight - cs[a].weight)[0];
+          return { index: target, amount: costs[target] };
+        }
+
+        // Nothing worth buying: late on, shore up any claim the player could flip with a single coin
+        if (open && t <= 25 && state.playerReserve >= 2) {
+          const thin = base.mine
+            .filter((i) => cs[i].enemyBid - cs[i].playerBid <= 1)
+            .sort((a, b) => cs[b].weight - cs[a].weight)[0];
+          if (thin !== undefined) return { index: thin, amount: Math.min(spendable, t <= 10 ? 2 : 1) };
+        }
+        return null;
+      }
+
+      function aiLockIn() {
+        if (state.enemyLocked) return;
+        const refunded = state.enemyReserve;
+        if (refunded > 0) {
+          state.vaults.enemy += refunded;
+          state.enemyReserve = 0;
+          saveVaults(state.vaults);
+        }
+        state.enemyLocked = true;
+        dom.bidFeedback.textContent = 'The Iron Regent has locked in its bids.';
+        renderAll();
+        if (state.playerLocked) {
+          settleAuction('Both sides locked in');
+        }
+      }
+
+      function aiNextDelay() {
+        if (state.playerLocked) return 600 + Math.random() * 500;
+        if (state.timeRemaining <= 20) return 1000 + Math.random() * 700;
+        return 2200 + Math.random() * 1800;
+      }
+
+      function scheduleAiTurn(delayMs = 2600) {
+        clearTimeout(aiTimer);
+        if (state.phase !== 'AUCTION' || state.enemyLocked) return;
+
+        aiTimer = setTimeout(() => {
+          if (state.phase !== 'AUCTION' || state.enemyLocked) return;
+          performAiStep();
+          if (!state.enemyLocked && state.phase === 'AUCTION') {
+            scheduleAiTurn(aiNextDelay());
+          }
+        }, delayMs);
+      }
+
+      function performAiStep() {
+        if (state.enemyLocked || state.phase !== 'AUCTION') return;
+        if (state.enemyReserve <= 0 || state.timeRemaining <= 3) {
+          aiLockIn();
+          return;
+        }
+        // Patient early game: sometimes wait and watch instead of acting
+        if (!state.playerLocked && state.timeRemaining > 60 && Math.random() < 0.2) return;
+
+        const plan = aiChooseBid();
+        if (!plan) {
+          if (state.playerLocked) aiLockIn(); // nothing more to gain once the player is final
+          return;
+        }
+        const target = state.castles[plan.index];
+        const amount = Math.min(plan.amount, state.enemyReserve);
+        if (!target || amount <= 0) return;
+
+        target.enemyBid += amount;
+        state.enemyReserve -= amount;
+        sfx.aiBid();
+        dom.bidFeedback.textContent = `Iron Regent bid +${amount} ◉ on Castle ${castleLabel(target)} (${target.enemyBid} ◉).`;
+        renderAll();
+      }
+
+      /* ========================================================================
+         9. Rendering Functions
+         ======================================================================== */
+      function renderTimer() {
+        dom.timer.textContent = formatClock(state.timeRemaining);
+        const pct = Math.max(0, Math.min(100, (state.timeRemaining / AUCTION_DURATION) * 100));
+        dom.timerFill.style.width = `${pct}%`;
+        dom.timer.classList.toggle('urgent', state.timeRemaining <= 20);
+      }
+
+      function renderBoard() {
+        const claims = computePreClaims();
+        dom.playerClaims.textContent = `${claims.playerIds.size} / 2`;
+        dom.enemyClaims.textContent = `${claims.enemyIds.size} / 2`;
+
+        dom.board.innerHTML = '';
+        for (const castle of state.castles) {
+          const lead = getLeadSide(castle);
+          const isSelected = castle.id === state.selectedCastleId;
+          const isPClaim = claims.playerIds.has(castle.id);
+          const isEClaim = claims.enemyIds.has(castle.id);
+
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = [
+            'castle-tile',
+            isSelected ? 'selected' : '',
+            lead === 'player' ? 'lead-player' : '',
+            lead === 'enemy' ? 'lead-enemy' : '',
+            lead === 'tied' ? 'lead-tied' : ''
+          ].filter(Boolean).join(' ');
+
+          let badgeHtml = '';
+          if (isPClaim) {
+            badgeHtml = `<span class="castle-preclaim preclaim-player">CLAIM ♙</span>`;
+          } else if (isEClaim) {
+            badgeHtml = `<span class="castle-preclaim preclaim-enemy">CLAIM ♟</span>`;
+          }
+
+          btn.innerHTML = `
+            <div class="castle-top">
+              <span class="castle-tier">PWR ${castle.weight}</span>
+              ${badgeHtml}
+            </div>
+            <div>
+              <div class="castle-name">#${castleNo(castle)}</div>
+              <div class="castle-coord">ROW ${castleRC(castle).r} · COL ${castleRC(castle).c}</div>
+            </div>
+            <div class="castle-bids">
+              <span class="bid-p">YOU ${castle.playerBid}◉</span>
+              <span class="bid-e">AI ${castle.enemyBid}◉</span>
+            </div>
+          `;
+
+          btn.addEventListener('click', () => {
+            state.selectedCastleId = castle.id;
+            sfx.click();
+            if (state.phase === 'AUCTION' && playerLeadsCastle(castle) && !computePreClaims().playerIds.has(castle.id)) {
+              dom.bidFeedback.textContent = 'You lead this castle. Press ★ CLAIM HERE to move a claim onto it for free (no extra bid).';
+            }
+            renderDock();
+            renderBoard();
+          });
+
+          dom.board.appendChild(btn);
+        }
+      }
+
+      function renderDock() {
+        const castle = state.castles.find((c) => c.id === state.selectedCastleId) || state.castles[0];
+        if (!castle) return;
+
+        dom.selectedName.textContent = `Castle ${castleLabel(castle)}`;
+        const lead = getLeadSide(castle);
+        const leadText =
+          lead === 'player'
+            ? 'YOU LEAD'
+            : lead === 'enemy'
+            ? 'RIVAL LEADS'
+            : lead === 'tied'
+            ? 'TIED'
+            : 'UNCONTESTED';
+        dom.selectedStatus.textContent = `${leadText} · YOUR BID ${castle.playerBid} ◉ · RIVAL ${castle.enemyBid} ◉ · POWER ${castle.weight}`;
+
+        const canBid = state.phase === 'AUCTION' && !state.playerLocked && state.playerReserve > 0;
+        document.querySelectorAll('.bid-buttons button').forEach((b) => {
+          b.disabled = !canBid;
+        });
+        dom.bidAmount.disabled = !canBid;
+        dom.bidCustomBtn.disabled = !canBid;
+
+        const isClaimed = computePreClaims().playerIds.has(castle.id);
+        dom.claimBtn.disabled = state.phase !== 'AUCTION' || isClaimed || !playerLeadsCastle(castle);
+        dom.claimBtn.textContent = isClaimed ? '★ CLAIMED' : '★ CLAIM HERE';
+
+        dom.lockInBtn.disabled = state.phase !== 'AUCTION' || state.playerLocked;
+        dom.lockInBtn.innerHTML = state.playerLocked
+          ? 'LOCKED IN ✓'
+          : 'LOCK IN <span>↗</span>';
+      }
+
+      function renderAll() {
+        dom.playerBudget.textContent = String(state.playerReserve);
+        dom.enemyBudget.textContent = String(state.enemyReserve);
+        dom.playerVault.innerHTML = `${state.vaults.player} <i>◉</i>`;
+        dom.enemyVault.innerHTML = `${state.vaults.enemy} <i>◉</i>`;
+        renderTimer();
+        renderBoard();
+        renderDock();
+      }
+
+      /* ========================================================================
+         10. Event Wiring & Initialization
+         ======================================================================== */
+      function bindEvents() {
+        dom.enterBtn.addEventListener('click', () => {
+          startCoinToss();
+        });
+
+        dom.soundToggle.addEventListener('click', () => {
+          sfx.enabled = !sfx.enabled;
+          dom.soundToggle.classList.toggle('muted', !sfx.enabled);
+          showToast(sfx.enabled ? 'Synthesized sound enabled.' : 'Sound muted.');
+          if (sfx.enabled) sfx.click();
+        });
+
+        document.querySelectorAll('.bid-buttons button').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            placePlayerBid(btn.dataset.bid);
+          });
+        });
+
+        const submitCustomBid = () => {
+          const raw = dom.bidAmount.value.trim();
+          const amt = Number(raw);
+          if (!raw || !Number.isInteger(amt) || amt < 1) {
+            showToast('Type a whole number of coins (1 or more).');
+            return;
+          }
+          if (amt > state.playerReserve) {
+            showToast(`You only have ${state.playerReserve} ◉ left to bid.`);
+            return;
+          }
+          placePlayerBid(amt);
+          dom.bidAmount.value = '';
+        };
+        dom.bidCustomBtn.addEventListener('click', submitCustomBid);
+        dom.bidAmount.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            submitCustomBid();
+          }
+        });
+
+        dom.lockInBtn.addEventListener('click', () => {
+          lockInPlayer();
+        });
+
+        dom.claimBtn.addEventListener('click', () => {
+          claimSelectedCastle();
+        });
+
+        dom.callHeads.addEventListener('click', () => setTossCall('heads'));
+        dom.callTails.addEventListener('click', () => setTossCall('tails'));
+        dom.tossCoin.addEventListener('click', performToss);
+        dom.tossCoin.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            performToss();
+          }
+        });
+
+        const startBattle = () => {
+          sfx.click();
+          const payload = JSON.stringify(state.auctionResult, null, 2);
+          showToast('Auction payload ready in GameRootStore.auctionResult — invoking ModuleB hook.');
+          if (window.ModuleB && typeof window.ModuleB.initFromAuction === 'function') {
+            window.ModuleB.initFromAuction(GameRootStore);
+          }
+          // Copy summary payload via execCommand fallback for sandbox compatibility
+          try {
+            const ta = document.createElement('textarea');
+            ta.value = payload;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          } catch (_) {}
+        };
+        dom.showResultBtn.addEventListener('click', startBattle);
+        dom.resBattleBtn.addEventListener('click', startBattle);
+
+        // Go back to the (now read-only) auction board to review the final bids and claims
+        dom.viewAuctionBtn.addEventListener('click', () => {
+          if (state.phase !== 'SETTLED') return;
+          sfx.click();
+          state.viewResults = true;
+          dom.bidFeedback.textContent = 'Final auction results — tap a castle to review its bids.';
+          setPhase('SETTLED');
+        });
+
+        dom.resNewBtn.addEventListener('click', () => {
+          startCoinToss();
+        });
+
+        // DEV Panel Controls
+        dom.devToggle.addEventListener('click', () => {
+          dom.devPanel.hidden = !dom.devPanel.hidden;
+        });
+
+        dom.skipTossBtn.addEventListener('click', () => {
+          if (state.phase === 'COIN_TOSS' || state.phase === 'ENTRY') {
+            startAuction();
+            showToast('DEV: Skipped toss into live auction.');
+          } else {
+            showToast('DEV: Already past coin toss.');
+          }
+        });
+
+        dom.endAuctionBtn.addEventListener('click', () => {
+          if (state.phase === 'AUCTION' || state.phase === 'COIN_TOSS') {
+            settleAuction('Settled via DEV controls');
+            showToast('DEV: Auction settled.');
+          } else {
+            showToast('DEV: Match already settled.');
+          }
+        });
+
+        dom.resetVaultsBtn.addEventListener('click', () => {
+          state.vaults = { player: 0, enemy: 0 };
+          saveVaults(state.vaults);
+          renderAll();
+          showToast('DEV: Persistent vaults reset to 0 ◉.');
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+      }
+
+      window.addEventListener('load', () => {
+        try {
+          resizeCanvas();
+          bindEvents();
+          setPhase('ENTRY');
+          requestAnimationFrame(renderBackdrop);
+        } catch (err) {
+          showToast(`Initialization error: ${err.message}`);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
